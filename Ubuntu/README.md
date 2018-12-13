@@ -13,9 +13,13 @@ Provide a script to install Ubuntu on ZFS side by side with Windows 10. Instruct
 
 ## Status
 
-Nearing completion to install Ubuntu whole disk.
+Cursory testing to install dual boot with Windows is successful.
 
-The main script has sort of been run through (though the chroot script execution is commented out and needs to be run manually. But I'm eager to get on with dual boot installation.
+## WARNING WILL ROBINSON
+
+**If something goes wrong this script *will* destroy any data on any target system drive.** I captured a full disk image backup before testing this on any of my systems. Taking a full image backup takes less time than reinstalling Windows should that be needed.
+
+Needless to say, I am not responsible for any data loss incurred as a result of using this S/W. Ise at your own risk and take appropriate precautions to backup your data.
 
 ## Usage
 
@@ -29,4 +33,5 @@ Boot the USB and
 
 ## TODO
 
-Modify to install side by side with Windows (or possibly some other OS.)
+* Decide if I want the post-reboot script to install the desktop.
+* Fully automate the script (Eliminate three interactive commands.)
