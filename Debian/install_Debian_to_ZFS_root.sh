@@ -46,51 +46,51 @@ fi
 zpool create -o ashift=12 \
       -O atime=off -O canmount=off -O compression=lz4 -O normalization=formD \
       -O xattr=sa -O mountpoint=/ -R /mnt -f \
-      rpool $ROOT_PART
+      rpooldeb $ROOT_PART
 
 # 3.1 Create a filesystem dataset to act as a container
-zfs create -o canmount=off -o mountpoint=none rpool/ROOT
+zfs create -o canmount=off -o mountpoint=none rpooldeb/ROOT
 
 # 3.2 Create a filesystem dataset for the root filesystem
-zfs create -o canmount=noauto -o mountpoint=/ rpool/ROOT/debian
-zfs mount rpool/ROOT/ubuntu
+zfs create -o canmount=noauto -o mountpoint=/ rpooldeb/ROOT/debian
+zfs mount rpooldeb/ROOT/debian
 
 # 3.3 Create datasets
-zfs create                 -o setuid=off              rpool/home
-zfs create -o mountpoint=/root                        rpool/home/root
-zfs create -o canmount=off -o setuid=off  -o exec=off rpool/var
-zfs create -o com.sun:auto-snapshot=false             rpool/var/cache
-zfs create                                            rpool/var/log
-zfs create                                            rpool/var/spool
-zfs create -o com.sun:auto-snapshot=false -o exec=on  rpool/var/tmp
+zfs create                 -o setuid=off              rpooldeb/home
+zfs create -o mountpoint=/root                        rpooldeb/home/root
+zfs create -o canmount=off -o setuid=off  -o exec=off rpooldeb/var
+zfs create -o com.sun:auto-snapshot=false             rpooldeb/var/cache
+zfs create                                            rpooldeb/var/log
+zfs create                                            rpooldeb/var/spool
+zfs create -o com.sun:auto-snapshot=false -o exec=on  rpooldeb/var/tmp
 
 # If you use /srv on this system:
-zfs create                                            rpool/srv
+zfs create                                            rpooldeb/srv
 
 # If this system will have games installed:
-zfs create                                            rpool/var/games
+zfs create                                            rpooldeb/var/games
 
 # If this system will store local email in /var/mail:
-zfs create                                            rpool/var/mail
+zfs create                                            rpooldeb/var/mail
 
 # If you will use Postfix, it requires exec=on for its chroot.  Choose:
-# zfs inherit exec rpool/var
+# zfs inherit exec rpooldeb/var
 # OR
-zfs create -o exec=on rpool/var/spool/postfix
+zfs create -o exec=on rpooldeb/var/spool/postfix
 
 # If this system will use NFS (locking):
 zfs create -o com.sun:auto-snapshot=false \
-             -o mountpoint=/var/lib/nfs                 rpool/var/nfs
+             -o mountpoint=/var/lib/nfs                 rpooldeb/var/nfs
 
 # If you want a separate /tmp dataset (choose this now or tmpfs later):
 zfs create -o com.sun:auto-snapshot=false \
-             -o setuid=off                              rpool/tmp
+             -o setuid=off                              rpooldeb/tmp
 chmod 1777 /mnt/tmp
 
 # 3.5 Install the minimal system
 chmod 1777 /mnt/var/tmp
 debootstrap stretch /mnt
-zfs set devices=off rpool
+zfs set devices=off rpooldeb
 
 # 4.1 Configure the hostname (change HOSTNAME to the desired hostname).
 echo $NEW_HOSTNAME > /mnt/etc/hostname
@@ -110,15 +110,16 @@ auto ${ETHERNET}
 iface ${ETHERNET} inet dhcp
 EOF
 
-cat/mnt/etc/network/interfaces.d/${ETHERNET}
+cat /mnt/etc/network/interfaces.d/${ETHERNET}
 
 # 4.3  Configure the package sources:
 # Add `contrib` archive area:
-vi /mnt/etc/apt/sources.list
+sed -i "s/^/# /" /mnt/etc/apt/sources.list
+cat <<EOF >> /mnt/etc/apt/sources.list
 deb http://ftp.debian.org/debian stretch main contrib
 deb-src http://ftp.debian.org/debian stretch main contrib
-
-cat /mnt/etc/apt/sources.list
+EOF
+vi /mnt/etc/apt/sources.list
 
 # 4.4  Bind the virtual filesystems from the LiveCD environment to the new system
 # and `chroot` into it:
@@ -139,6 +140,8 @@ set -x
 # 4.5 Configure a basic system environment
 ln -s /proc/self/mounts /etc/mtab
 apt update
+bash
+apt install --yes locales
 dpkg-reconfigure locales
 dpkg-reconfigure tzdata
 
@@ -167,17 +170,17 @@ apt install --yes grub-efi-amd64
 passwd
 
 # 4.8 Fix filesystem mount ordering
-zfs set mountpoint=legacy rpool/var/log
-zfs set mountpoint=legacy rpool/var/tmp
+zfs set mountpoint=legacy rpooldeb/var/log
+zfs set mountpoint=legacy rpooldeb/var/tmp
 cat >> /etc/fstab << EOF
-rpool/var/log /var/log zfs noatime,nodev,noexec,nosuid 0 0
-rpool/var/tmp /var/tmp zfs noatime,nodev,nosuid 0 0
+rpooldeb/var/log /var/log zfs noatime,nodev,noexec,nosuid 0 0
+rpooldeb/var/tmp /var/tmp zfs noatime,nodev,nosuid 0 0
 EOF
 
 # If you created a /tmp dataset, do the same for it:
-zfs set mountpoint=legacy rpool/tmp
+zfs set mountpoint=legacy rpooldeb/tmp
 cat >> /etc/fstab << EOF
-rpool/tmp /tmp zfs noatime,nodev,nosuid 0 0
+rpooldeb/tmp /tmp zfs noatime,nodev,nosuid 0 0
 EOF
 
 # 5.1 Verify that the ZFS root filesystem is recognized
@@ -207,7 +210,7 @@ grub-install --target=x86_64-efi --efi-directory=/boot/efi \
 ls /boot/grub/*/zfs.mod
 
 # 6.1 Snapshot the initial installation
-zfs snapshot rpool/ROOT/debian@install
+zfs snapshot rpooldeb/ROOT/debian@install
 
 # 6.2 Exit from the chroot environment back to the LiveCD environment
 exit
@@ -217,7 +220,7 @@ chroot /mnt /usr/local/sbin/chroot_commands.sh
 
 # 6.3 Run these commands in the LiveCD environment to unmount all filesystems
 mount | grep -v zfs | tac | awk '/\/mnt/ {print $3}' | xargs -i{} umount -lf {}
-zpool export rpool
+zpool export rpooldeb
 
 # 6.4 Reboot
 # reboot
