@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 1.4 Become root:
+# 1.3 Become root:
 # sudo -i
 if [[ $EUID -ne 0 ]]; then
    echo "This script must be run as root" 
@@ -11,6 +11,21 @@ fi
 set -e
 set -u
 set -x
+
+# 1.4 Add contrib archive area
+if [ -e /etc/apt/sources.list ] 
+then
+    echo "deb http://ftp.debian.org/debian stretch main contrib" > /etc/apt/sources.list
+else
+    if [ -d /etc/apt/sources.list.d ]
+    then
+        echo "deb http://ftp.debian.org/debian stretch main contrib" > /etc/apt/sources.list.d/zfs-contrib.list
+    else
+        echo "can't find sources file"
+        exit 1
+    fi
+fi
+apt update
 
 # 1.5 Install ZFS in the Live CD environment
 apt install --yes debootstrap gdisk dpkg-dev linux-headers-$(uname -r)

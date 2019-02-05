@@ -13,11 +13,11 @@ sudo sed -i "s/#PasswordAuthentication yes/PasswordAuthentication yes/g" \
 sudo service ssh restart
 
 # 1.3 Become root 
-sudo -i
+## sudo -i
 
 # 1.4 Add contrib archive area
-echo "deb http://ftp.debian.org/debian stretch main contrib" > /etc/apt/sources.list
-apt update
+## echo "deb http://ftp.debian.org/debian stretch main contrib" > /etc/apt/sources.list
+## apt update
 
 echo "ssh in and run install_Debian_to_ZFS_root.sh
 
