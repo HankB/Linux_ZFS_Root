@@ -114,7 +114,6 @@ echo "127.0.1.1       $NEW_HOSTNAME" >> /mnt/etc/hosts
 # 127.0.1.1       HOSTNAME
 # or if the system has a real name in DNS:
 # 127.0.1.1       FQDN HOSTNAME
-vi /mnt/etc/hosts
 
 # 4.2 Configure the network interface:
 # Find the interface name:
@@ -134,7 +133,6 @@ cat <<EOF >> /mnt/etc/apt/sources.list
 deb http://ftp.debian.org/debian stretch main contrib
 deb-src http://ftp.debian.org/debian stretch main contrib
 EOF
-vi /mnt/etc/apt/sources.list
 
 # 4.4  Bind the virtual filesystems from the LiveCD environment to the new system
 # and `chroot` into it:
@@ -155,7 +153,6 @@ set -x
 # 4.5 Configure a basic system environment
 ln -s /proc/self/mounts /etc/mtab
 apt update
-bash
 apt install --yes locales
 dpkg-reconfigure locales
 dpkg-reconfigure tzdata
