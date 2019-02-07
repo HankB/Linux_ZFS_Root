@@ -19,5 +19,5 @@ sudo service ssh restart
 ## echo "deb http://ftp.debian.org/debian stretch main contrib" > /etc/apt/sources.list
 ## apt update
 
-echo "ssh in and run install_Debian_to_ZFS_root.sh
+echo "ssh in and run install_Debian_to_ZFS_root.sh"
 
