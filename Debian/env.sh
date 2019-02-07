@@ -5,7 +5,7 @@ export DRIVE_ID=
 export ETHERNET=enp3s0
 export NEW_HOSTNAME=saugage
 export YOURUSERNAME=hbarta
-
+export POOLNAME=rpool
 export USE_EXISTING_PART=yes
 export USE_EXISTING_PART=no
 
