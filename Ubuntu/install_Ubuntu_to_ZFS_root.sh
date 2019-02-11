@@ -136,7 +136,7 @@ mount --rbind /sys  /mnt/sys
 
 #chroot /mnt /bin/bash --login
 
-# following commands have to be copied/pasted to execute inside the chroot
+# prepare a script to execute inside the chroot
 cat <<END_OF_CHROOT >/mnt/usr/local/sbin/chroot_commands.sh
 #!/bin/bash
 set -e
