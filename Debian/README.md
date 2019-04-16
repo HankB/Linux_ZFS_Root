@@ -15,6 +15,8 @@ Provide a script to install Debian on ZFS side by side with Windows 10. Instruct
 
 Started migrating script produced to install Ubuntu.
 
+Note: As of Rickard Laager's email to zfs-discuss@list.zfsonlinux.org on Mar 18, 2019, 10:57 PM this script is no longer synchronized with the instructions referenced above. The script may still work (It did for me) but will not utilize the most recent improvements in the procedure.
+
 ## WARNING WILL ROBINSON
 
 **If something goes wrong this script *will* destroy any data on any target system drive.** I captured a full disk image backup before testing this on any of my systems. Taking a full image backup takes less time than reinstalling Windows should that be needed.
