@@ -8,8 +8,6 @@ set -x
 # 1.2 Optional: Install and start the OpenSSH server in the Live CD environment
 sudo apt update
 sudo apt install --yes openssh-server
-sudo sed -i "s/#PasswordAuthentication yes/PasswordAuthentication yes/g" \
-      /etc/ssh/sshd_config
 sudo service ssh restart
 
 # 1.3 Become root 
