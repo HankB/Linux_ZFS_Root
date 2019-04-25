@@ -8,9 +8,9 @@ if [[ $EUID -ne 0 ]]; then
    exit 1
 fi
 
-set -e      # exit on error
-set -u      # treat unset variables as errors
-set -x      # expand commands
+set -e
+set -u
+set -x
 
 # 1.4 Add contrib archive area
 if [ -e /etc/apt/sources.list ] 
@@ -57,6 +57,8 @@ if [ $USE_EXISTING_PART == "no" ];then
 elif [ $USE_EXISTING_PART == "yes" ];then
     echo "using $ROOT_PART for root"
     echo "using $BOOT_PART for boot"
+    wipefs -a $ROOT_PART     # useful if the partition already had ZFS pools
+    wipefs -a $BOOT_PART     # useful if the partition already had ZFS pools
     echo "using $EFI_PART for EFI"
 else
     echo set USE_EXISTING_PART to \"yes\" or \"no\"
