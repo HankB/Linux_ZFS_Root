@@ -8,9 +8,9 @@ if [[ $EUID -ne 0 ]]; then
    exit 1
 fi
 
-set -e
-set -u
-set -x
+set -e      # exit on error
+set -u      # treat unset variables as errors
+set -x      # expand commands
 
 # 1.4 Add contrib archive area
 if [ -e /etc/apt/sources.list ] 
@@ -57,6 +57,8 @@ if [ $USE_EXISTING_PART == "no" ];then
 elif [ $USE_EXISTING_PART == "yes" ];then
     echo "using $ROOT_PART for root"
     echo "using $BOOT_PART for boot"
+    wipefs -a $ROOT_PART     # useful if the partition already had ZFS pools
+    wipefs -a $BOOT_PART     # useful if the partition already had ZFS pools
     echo "using $EFI_PART for EFI"
 else
     echo set USE_EXISTING_PART to \"yes\" or \"no\"
@@ -144,9 +146,9 @@ zfs create                                            ${ROOT_POOL_NAME}/var/lib/
 zfs create -o com.sun:auto-snapshot=false             ${ROOT_POOL_NAME}/var/lib/docker
 
 # If this system will use NFS (locking):
-zfs create -o com.sun:auto-snapshot=false               ${ROOT_POOL_NAME}/var/lib/nfs
-
 zfs create -o com.sun:auto-snapshot=false             ${ROOT_POOL_NAME}/var/lib/nfs
+
+# A tmpfs is recommended later, but if you want a separate dataset for /tmp:
 # zfs create -o com.sun:auto-snapshot=false  rpool/tmp
 # chmod 1777 /mnt/tmp
 
