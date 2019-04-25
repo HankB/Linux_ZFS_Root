@@ -15,7 +15,12 @@ export USE_EXISTING_PART=  # yes|no
 export EFI_PART=
 export ROOT_PART=
 export BOOT_PART=
+# Specify entire path
+# e.g. 'export EFI_PART=/dev/disk/by-id/ata-SATA_SSD_18120612000764-part2'
+
 
 # for USE_EXISTING_PART=no
 
 export DRIVE_ID=
+# specify only the last part of the path.
+# e,g `export DRIVE_ID=ata-SATA_SSD_18120612000764`
