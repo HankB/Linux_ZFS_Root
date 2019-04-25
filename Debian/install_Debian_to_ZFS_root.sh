@@ -324,8 +324,6 @@ echo ${ROOT_POOL_NAME}/var/tmp /var/tmp zfs nodev,relatime 0 0 >> /etc/fstab
 zfs snapshot ${ROOT_POOL_NAME}/ROOT/debian@install
 zfs snapshot ${BOOT_POOL_NAME}/BOOT/debian@install
 
-bash
-
 # 6.2 Exit from the chroot environment back to the LiveCD environment
 exit
 END_OF_CHROOT
