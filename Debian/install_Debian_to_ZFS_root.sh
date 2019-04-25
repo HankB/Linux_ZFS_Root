@@ -8,9 +8,9 @@ if [[ $EUID -ne 0 ]]; then
    exit 1
 fi
 
-set -e
-set -u
-set -x
+set -e      # exit on error
+set -u      # treat unset variables as errors
+set -x      # expand commands
 
 # 1.4 Add contrib archive area
 if [ -e /etc/apt/sources.list ] 
