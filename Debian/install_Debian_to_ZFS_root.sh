@@ -36,7 +36,7 @@ modprobe zfs
 
 # 2.2 Partition your disk
 
-if [ $USE_EXISTING_PART == "no" ];then
+if [ $INSTALL_TYPE == "whole_disk" ];then
     # 2.1 If you are re-using a disk, clear it as necessary
     wipefs -a /dev/disk/by-id/$DRIVE_ID     # useful if the drive already had ZFS pools
     sgdisk --zap-all /dev/disk/by-id/$DRIVE_ID
@@ -54,45 +54,50 @@ if [ $USE_EXISTING_PART == "no" ];then
     sgdisk     -n4:0:0      -t4:BF01 /dev/disk/by-id/$DRIVE_ID
     export ROOT_PART=/dev/disk/by-id/${DRIVE_ID}-part4
     partprobe  /dev/disk/by-id/$DRIVE_ID
-elif [ $USE_EXISTING_PART == "yes" ];then
-    echo "using $ROOT_PART for root"
-    echo "using $BOOT_PART for boot"
+elif [ $INSTALL_TYPE == "use_partitions" ];then
+    echo "using $ROOT_PART for root partition"
+    echo "using $BOOT_PART for boot partition"
     wipefs -a $ROOT_PART     # useful if the partition already had ZFS pools
     wipefs -a $BOOT_PART     # useful if the partition already had ZFS pools
-    echo "using $EFI_PART for EFI"
+    echo "using $EFI_PART for EFI partition"
+elif [ $INSTALL_TYPE == "use_pools" ];then
+    echo "using $ROOT_POOL_NAME for root pool"
+    echo "using $BOOT_POOL_NAME for boot pool"
+    echo "using $EFI_PART for EFI partition"
+
 else
-    echo set USE_EXISTING_PART to \"yes\" or \"no\"
+    echo set INSTALL_TYPE to \"whole_disk\" or \"use_partitions\" or \"use_pools\"
     exit 1
 fi
 
+if [ $INSTALL_TYPE != "use_pools" ];then 
+    # 2.3 Create the boot pool
+    zpool create -o ashift=12 -d \
+        -o feature@async_destroy=enabled \
+        -o feature@bookmarks=enabled \
+        -o feature@embedded_data=enabled \
+        -o feature@empty_bpobj=enabled \
+        -o feature@enabled_txg=enabled \
+        -o feature@extensible_dataset=enabled \
+        -o feature@filesystem_limits=enabled \
+        -o feature@hole_birth=enabled \
+        -o feature@large_blocks=enabled \
+        -o feature@lz4_compress=enabled \
+        -o feature@spacemap_histogram=enabled \
+        -o feature@userobj_accounting=enabled \
+        -O acltype=posixacl -O canmount=off -O compression=lz4 -O devices=off \
+        -O normalization=formD -O relatime=on -O xattr=sa \
+        -O mountpoint=/ -R /mnt -f \
+        ${BOOT_POOL_NAME} $BOOT_PART
 
-# 2.3 Create the boot pool
-zpool create -o ashift=12 -d \
-      -o feature@async_destroy=enabled \
-      -o feature@bookmarks=enabled \
-      -o feature@embedded_data=enabled \
-      -o feature@empty_bpobj=enabled \
-      -o feature@enabled_txg=enabled \
-      -o feature@extensible_dataset=enabled \
-      -o feature@filesystem_limits=enabled \
-      -o feature@hole_birth=enabled \
-      -o feature@large_blocks=enabled \
-      -o feature@lz4_compress=enabled \
-      -o feature@spacemap_histogram=enabled \
-      -o feature@userobj_accounting=enabled \
-      -O acltype=posixacl -O canmount=off -O compression=lz4 -O devices=off \
-      -O normalization=formD -O relatime=on -O xattr=sa \
-      -O mountpoint=/ -R /mnt -f \
-      ${BOOT_POOL_NAME} $BOOT_PART
-
-# 2.4 Create the root pool
-# 2.4a Unencrypted
-zpool create -o ashift=12 \
-      -O acltype=posixacl -O canmount=off -O compression=lz4 \
-      -O dnodesize=auto -O normalization=formD -O relatime=on -O xattr=sa \
-      -O mountpoint=/ -R /mnt -f \
-      ${ROOT_POOL_NAME} $ROOT_PART
-
+    # 2.4 Create the root pool
+    # 2.4a Unencrypted
+    zpool create -o ashift=12 \
+        -O acltype=posixacl -O canmount=off -O compression=lz4 \
+        -O dnodesize=auto -O normalization=formD -O relatime=on -O xattr=sa \
+        -O mountpoint=/ -R /mnt -f \
+        ${ROOT_POOL_NAME} $ROOT_PART
+fi
 
 # 3.1 Create filesystem datasets to act as containers
 zfs create -o canmount=off -o mountpoint=none ${ROOT_POOL_NAME}/ROOT
@@ -224,7 +229,7 @@ apt install --yes zfs-initramfs
 
 # 4.7 Install GRUB
 # 4.7b Install GRUB for UEFI booting
-if [ $USE_EXISTING_PART == "no" ];then
+if [ $INSTALL_TYPE == "whole_disk" ];then
     apt install dosfstools
     mkdosfs -F 32 -s 1 -n EFI ${EFI_PART}
 fi
