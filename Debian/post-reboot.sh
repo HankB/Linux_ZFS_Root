@@ -47,7 +47,7 @@ for file in /etc/logrotate.d/* ; do
 done
 
 # X.X my mod - install SSH server
-apt install openssh-server
+apt install --yes openssh-server
 
 echo reboot and review Final Cleanup in the reference document
 
