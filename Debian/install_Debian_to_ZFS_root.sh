@@ -50,8 +50,16 @@ if [ $INSTALL_TYPE == "whole_disk" ];then
     sgdisk     -n3:0:+512M    -t3:BF01 /dev/disk/by-id/$DRIVE_ID
     export BOOT_PART=/dev/disk/by-id/${DRIVE_ID}-part3
 
-    # 2.2a Unencrypted
-    sgdisk     -n4:0:0      -t4:BF01 /dev/disk/by-id/$DRIVE_ID
+    if [ $ENCRYPT == "no" ]; then
+        # 2.2a Unencrypted
+        sgdisk     -n4:0:0      -t4:BF01 /dev/disk/by-id/$DRIVE_ID
+    elif [ $ENCRYPT == "yes" ]; then
+        # 2.2b LUKS:
+        sgdisk     -n4:0:0      -t4:8300 /dev/disk/by-id/$DRIVE_ID
+    else
+        echo "Set ENCRYPT to \"yes\" or \"no\""
+        exit 1
+    fi
     export ROOT_PART=/dev/disk/by-id/${DRIVE_ID}-part4
     partprobe  /dev/disk/by-id/$DRIVE_ID
 elif [ $INSTALL_TYPE == "use_partitions" ];then
@@ -91,12 +99,30 @@ if [ $INSTALL_TYPE != "use_pools" ];then
         ${BOOT_POOL_NAME} $BOOT_PART
 
     # 2.4 Create the root pool
-    # 2.4a Unencrypted
-    zpool create -o ashift=12 \
-        -O acltype=posixacl -O canmount=off -O compression=lz4 \
-        -O dnodesize=auto -O normalization=formD -O relatime=on -O xattr=sa \
-        -O mountpoint=/ -R /mnt -f \
-        ${ROOT_POOL_NAME} $ROOT_PART
+    if [ $ENCRYPT == "no" ]; then
+
+        # 2.4a Unencrypted
+        zpool create -o ashift=12 \
+            -O acltype=posixacl -O canmount=off -O compression=lz4 \
+            -O dnodesize=auto -O normalization=formD -O relatime=on -O xattr=sa \
+            -O mountpoint=/ -R /mnt -f \
+            ${ROOT_POOL_NAME} $ROOT_PART
+    elif [ $ENCRYPT == "yes" ]; then
+        # 2.4b LUKS:
+        apt install --yes cryptsetup
+        cryptsetup luksFormat -c aes-xts-plain64 -s 512 -h sha256 $ROOT_PART
+        cryptsetup luksOpen $ROOT_PART luks1
+        zpool create -o ashift=12 \
+            -O acltype=posixacl -O canmount=off -O compression=lz4 \
+            -O dnodesize=auto -O normalization=formD -O relatime=on -O xattr=sa \
+            -O mountpoint=/ -R /mnt -f \
+            ${ROOT_POOL_NAME} /dev/mapper/luks1
+        # TODO make 'luks1' an ENV var to manage the situatin when there are other
+        # encrypted partitions. Or find the first available (unused) luks device.
+    else
+        echo "Set ENCRYPT to \"yes\" or \"no\""
+        exit 1
+    fi
 fi
 
 # 3.1 Create filesystem datasets to act as containers
@@ -226,6 +252,13 @@ dpkg-reconfigure tzdata
 # 4.6 Install ZFS in the chroot environment for the new system
 apt install --yes dpkg-dev linux-headers-amd64 linux-image-amd64
 apt install --yes zfs-initramfs
+
+# 4.7 For LUKS installs only, setup crypttab:
+if [ $ENCRYPT == "yes" ]; then
+    apt install --yes cryptsetup
+    echo luks1 UUID=$(blkid -s UUID -o value  $ROOT_PART) none \
+        luks,discard,initramfs > /etc/crypttab
+fi
 
 # 4.7 Install GRUB
 # 4.7b Install GRUB for UEFI booting
