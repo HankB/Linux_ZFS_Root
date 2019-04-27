@@ -6,6 +6,8 @@ export NEW_HOSTNAME=mlbry01
 export YOURUSERNAME=hbarta
 export ROOT_POOL_NAME=rpool
 export BOOT_POOL_NAME=bpool
+export ENCRYPT=no
+# export ENCRYPT=yes # must be set
 
 # Select the type of installation
 export INSTALL_TYPE="whole_disk"|"use_partitions"|"use_pools"
@@ -29,3 +31,7 @@ export DRIVE_ID=
 export EFI_PART=
 # Specify entire path
 # e.g. 'export EFI_PART=/dev/disk/by-id/ata-SATA_SSD_18120612000764-part2'
+
+
+
+# export ENCRYPT="yes|no"

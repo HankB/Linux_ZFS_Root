@@ -18,7 +18,7 @@ The intent is to follow the instructions closely, however occasional problems cr
 ## Limitations
 
 * UEFI support only. All of my PCs on which I would use this support UEFI and I have found advantages to using that. In the case of dual boot support it will use the existing UEFI partition.
-* No support for encryption. Yet.
+* ~~~No support for encryption.~~~
 * No support to use existing ZFS pools. This is probably the next thing I will work on.
 * The script requires interaction. Come commands could probably be fully automated but at present it is necessary to acknowledge a popup regarding the ZFS license. (Be careful entering the new root password as the script aborts on any errors.)
 
@@ -71,6 +71,7 @@ export NEW_HOSTNAME=rocinante
 export YOURUSERNAME=hbarta
 export ROOT_POOL_NAME=rpool
 export BOOT_POOL_NAME=bpool
+export ENCRYPT=no|yes
 
 export INSTALL_TYPE=use_partitions
 
@@ -89,6 +90,7 @@ export NEW_HOSTNAME=rocinante
 export YOURUSERNAME=hbarta
 export ROOT_POOL_NAME=rpool
 export BOOT_POOL_NAME=bpool
+export ENCRYPT=no|yes
 
 export INSTALL_TYPE=whole_disk
 
@@ -105,6 +107,7 @@ export NEW_HOSTNAME=rocinante
 export YOURUSERNAME=hbarta
 export ROOT_POOL_NAME=rpool
 export BOOT_POOL_NAME=bpool
+export ENCRYPT=no|yes
 
 export INSTALL_TYPE=use_pools
 
@@ -145,4 +148,4 @@ I have submitted issues for things that I anticipate as possible next steps. If 
 
 * Fully automate the script (Eliminate three interactive commands.)
 * ~~~Install to preconfigured ZFS pools.~~~
-* Support encryption.
+* ~~~Support encryption.~~~
