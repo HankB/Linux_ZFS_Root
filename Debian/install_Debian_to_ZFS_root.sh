@@ -3,14 +3,20 @@
 # 1.3 Become root:
 # sudo -i
 if [[ $EUID -ne 0 ]]; then
-   echo "This script must be run as root" 
-   echo "execute \"sudo -i\" and try again"
-   exit 1
+    exec sudo "$0" "$@"
 fi
 
 set -e      # exit on error
 set -u      # treat unset variables as errors
 # set -x      # expand commands - for debugging
+
+if [ -z "$1" ]; then
+    echo using default ENV vars (env.sh)
+    source env.sh
+else
+    echo Getting ENV vars from $1
+    source $1
+fi
 
 # 1.4 Add contrib archive area
 if [ -e /etc/apt/sources.list ] 

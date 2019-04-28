@@ -62,6 +62,12 @@ Uses simple host name - not FQDN (step 4.1)
 
 These determine how the install is processed. The most import one is INSTALL_TYPE which determines if the entire disk is formatted, existing partitions or existing pools are used. If this is wrong it could produce undesirable results. (`INSTALL_TYPE=whole_disk` will effectively wipe the disk)
 
+Environment variables are provided to the script from a text file. If a text file is provided on the `install_Debian_to_ZFS_root.sh` command line, itr will be sourced in the script. If none is provided, the file `env.sh` will be used. The default behavior is the same as
+
+```bash
+install_Debian_to_ZFS_root.sh env.sh
+```
+
 Examples of settings are shown.
 
 #### Using an existing partition (e.g. dual or multi-boot.)
