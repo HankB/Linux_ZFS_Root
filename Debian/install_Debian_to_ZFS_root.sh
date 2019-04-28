@@ -10,7 +10,7 @@ fi
 
 set -e      # exit on error
 set -u      # treat unset variables as errors
-set -x      # expand commands
+# set -x      # expand commands - for debugging
 
 # 1.4 Add contrib archive area
 if [ -e /etc/apt/sources.list ] 
@@ -240,7 +240,7 @@ cat <<END_OF_CHROOT >/mnt/usr/local/sbin/chroot_commands.sh
 #!/bin/bash
 set -e
 set -u
-set -x
+$ set -x enable for more verboise output
 
 # 4.5 Configure a basic system environment
 ln -s /proc/self/mounts /etc/mtab
