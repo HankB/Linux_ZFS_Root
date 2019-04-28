@@ -5,7 +5,8 @@ Script to facilitate installing Debian Stretch on a ZFS root.
 ## Inspiration
 
 [Debian Stretch Root on ZFS
-](https://github.com/zfsonlinux/zfs/wiki/Debian-Stretch-Root-on-ZFS) as of 2019-04-18. Any references to "instructions" below refer to the contents of this link.
+](https://github.com/zfsonlinux/zfs/wiki/Debian-Stretch-Root-on-ZFS) as of [2019-04-18](https://github.com/zfsonlinux/zfs/wiki/Debian-Stretch-Root-on-ZFS/f8295f9368ee8f58ba2e626e38099fd71922f453
+). Any references to "instructions" below refer to the contents of this link.
 
 ## Deviations from Debian Stretch Root on ZFS
 
