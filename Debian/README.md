@@ -17,9 +17,9 @@ The intent is to follow the instructions closely, however occasional problems cr
 * The device is wiped using `wipefs` of all previous filesystem signatures. This was added because a previous ZFS pool would cause `zpool create` to fail, even with the `-f` option. In the case of using existing partitions, this is applied to the partitions selected for the `bpool` and `rpool`.
 
 ## Limitations
+
+* UEFI support only. All of my PCs on which I would use this support UEFI and I have found advantages to using that. In the case of dual boot support it will use the existing UEFI partition.
 * The script requires interaction. Some commands could probably be fully automated but at present it is necessary to acknowledge a popup regarding the ZFS license. (Be careful entering the new root password as the script aborts on any errors.)
-* No support to use existing ZFS pools. This is probably the next thing I will work on.
-* The script requires interaction. Come commands could probably be fully automated but at present it is necessary to acknowledge a popup regarding the ZFS license. (Be careful entering the new root password as the script aborts on any errors.)
 
 ## Motivation
 
@@ -152,5 +152,3 @@ I have submitted issues for things that I anticipate as possible next steps. If 
 ## TODO
 
 * Fully automate the script (Eliminate three interactive commands.)
-* ~~~Install to preconfigured ZFS pools.~~~
-* ~~~Support encryption.~~~
