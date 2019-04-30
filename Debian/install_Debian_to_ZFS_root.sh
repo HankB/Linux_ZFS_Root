@@ -10,8 +10,8 @@ set -e      # exit on error
 set -u      # treat unset variables as errors
 # set -x      # expand commands - for debugging
 
-if [ -z "$1" ]; then
-    echo using default ENV vars (env.sh)
+if [ "$#"  == 0 ]; then
+    echo 'using default ENV vars (env.sh)'
     source env.sh
 else
     echo Getting ENV vars from $1
@@ -246,7 +246,7 @@ cat <<END_OF_CHROOT >/mnt/usr/local/sbin/chroot_commands.sh
 #!/bin/bash
 set -e
 set -u
-$ set -x enable for more verboise output
+# set -x # enable for more verboise output
 
 # 4.5 Configure a basic system environment
 ln -s /proc/self/mounts /etc/mtab
