@@ -1,7 +1,5 @@
 # Debian ZFS Root
 
-# Script fails at this time. Come back soon
-
 Script to facilitate installing Debian Stretch on a ZFS root.
 
 ## Inspiration
