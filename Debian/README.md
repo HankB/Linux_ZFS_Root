@@ -27,6 +27,12 @@ Provide a script to install Debian on ZFS side by side with Windows 10. Instruct
 
 Second... I have difficulty following detailed instructions. In the long run it is easier to script the process. It takes a little more time up front but can then be easily repeated when desired.
 
+## Alternatives
+
+There are other scripts that may suit your needs better than this.
+
+* https://github.com/hn/debian-stretch-zfs-root
+
 ## Status
 
 * Script has been updated to support the instructions as of 2019-04-18.
@@ -138,6 +144,10 @@ Boot the Debian Live USB. Note that to install using EFI it may be necessary to 
 1. Source `env.sh` to populate the environment variables.
 1. Execute `install_Debian_to_ZFS_root.sh`.
 1. Ponder the need for a post-install script and copy/paste commands from the linked instructions and enjoy!
+
+## Testing
+
+Please see the README in testing.
 
 ## Contributing
 
