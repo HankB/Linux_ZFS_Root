@@ -2,6 +2,12 @@
 
 Script to facilitate installing Ubuntu on a ZFS root.
 
+## Warning
+
+This script is outdated as it does not include the separation of the boot pool (bpool) that the 
+instructions on Github now specify. With Canonical working toward including ZFS in their installer, 
+it seems not to make sense to put further work into this script and instead focus on the Debian variant.
+
 ## Inspiration
 
 [Ubuntu 18.04 Root on ZFS
