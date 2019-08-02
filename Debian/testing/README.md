@@ -4,9 +4,24 @@
 
 Initial testing was performed on real hardware. As more options were added the need for additional testing became apparent and further testing has been performed on a VM. To facilitate this testing, I have expanded the `env.sh` script in some cases to prepare partitions and filesystems in some cases to more fully automate the test. My procedure is as follows.
 
-0) Determine how to get the VM to boot the install ISO in EFI mode. For Virtualbox this required ticking the "Enable EFI (special OSes only)" box in Settings -> System -> Motherboard and mounting the ISO on the SATAQ bus in Settings -> Storage. (Linux is a spoecial OS! ;) )
-0) Boot from the ISO and confirm that the system booted in EFI mode. Check for existence of `/sys/firmware/efi'. (Shutdown the VM and clone from it for all subsequent tests.)
-0) Clone the VM and boot. Once in the live environment, sftp to the host and copy the files needed to perform the test (`install_Debian_to_ZFS_root.sh` and `env.sh` or whatever the settings file is named.)
+1) Determine how to get the VM to boot the install ISO in EFI mode. For Virtualbox this required
+
+* ticking the "Enable EFI (special OSes only)" box in Settings -> System -> Motherboard
+* mounting the Live ISO on the SATA bus in Settings -> Storage. (Linux is a special OS! ;) )
+* Configure Networking - Settings -> Network -> Attached to: Bridged Adapter. (Allows the host to connect with the guest.)
+
+2) Boot from the ISO and confirm that the system booted in EFI mode. Check for existence of `/sys/firmware/efi'. (Shutdown the VM and clone from it for all subsequent tests.)
+0) Clone the VM and boot. Once in the live environment, install and start `openssh-server`.
+
+```shell
+sudo -s
+apt update
+apt install openssh-server
+systemctl start openssh-server
+```
+
+4) `sftp` to from host to guest and copy the files needed to perform the test (`install_Debian_to_ZFS_root.sh` and `env.sh` or whatever the settings file is named.)
+0) `ssh` from host to guest to complete the installation.
 0) Modify the settings file to match the Ethernet device name and SATA disk ID. The Ethernet device name seems stable but the SATA disk ID changes each time I clone the VM.
 0) Run the test using the command `./install_Debian_to_ZFS_root.sh <settings file>`.
 0) Monitor the process and respond to any requests for further information.
