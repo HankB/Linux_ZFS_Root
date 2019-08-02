@@ -4,17 +4,18 @@ Script to facilitate installing Debian Stretch on a ZFS root.
 
 ## Inspiration
 
-[Debian Stretch Root on ZFS
-](https://github.com/zfsonlinux/zfs/wiki/Debian-Stretch-Root-on-ZFS) as of [2019-04-18](https://github.com/zfsonlinux/zfs/wiki/Debian-Stretch-Root-on-ZFS/f8295f9368ee8f58ba2e626e38099fd71922f453
+[Debian Buster Root on ZFS
+](https://github.com/zfsonlinux/zfs/wiki/Debian-Buster-Root-on-ZFS) as of 2019-06-29.
 ). Any references to "instructions" below refer to the contents of this link.
 
 ## Deviations from Debian Stretch Root on ZFS
 
-The intent is to follow the instructions closely, however occasional problems cropped up that required further changes not included in the original instructions. 
+The intent is to follow the instructions closely, however occasional problems cropped up that required further changes not included in the original instructions.
 
 * The script supports the capability to install dual boot with Windows or other Linux distros. It is entirely possible that it will not work with all distros. At present any problems encountered have resulted in failure to install and have not caused a problem with existing installations. Nevertheless is is highly recommended to back up the drive before proceeding. (I can backup a 120GB drive to my local file server in about 5 minutes.)
 * The `-f` (force) flag is included in the `zpool create` commands because on too many occasions the command exited with a warning and indicated it could be overridden with this flag.
 * The device is wiped using `wipefs` of all previous filesystem signatures. This was added because a previous ZFS pool would cause `zpool create` to fail, even with the `-f` option. In the case of using existing partitions, this is applied to the partitions selected for the `bpool` and `rpool`.
+* The efi and boot partitions are increased to 1024MB to reduce the chance that they could fill up. (The boot partition in an existing installation filled due to snapshots.)
 
 ## Limitations
 
@@ -35,8 +36,8 @@ There are other scripts that may suit your needs better than this.
 
 ## Status
 
-* Script has been updated to support the instructions as of 2019-04-18.
-* Script now supports use of existing root and boot pools.
+* Script is in process of being updated to support the instructions as of 2019-06-29 - install Debian Buster.
+* Testing has only been performed on the 'whole disk install w/out encryption.'
 
 ## WARNING WILL ROBINSON
 
