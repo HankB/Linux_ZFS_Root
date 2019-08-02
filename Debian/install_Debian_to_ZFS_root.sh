@@ -21,13 +21,11 @@ fi
 # 1.4 Add contrib archive area
 if [ -e /etc/apt/sources.list ] 
 then
-    echo deb http://ftp.debian.org/debian stretch contrib > /etc/apt/sources.list
-    echo deb http://deb.debian.org/debian stretch-backports main contrib >> /etc/apt/sources.list
+    echo deb http://ftp.debian.org/debian buster contrib >> /etc/apt/sources.list
 else
     if [ -d /etc/apt/sources.list.d ]
     then
-        echo "deb http://ftp.debian.org/debian stretch main contrib" > /etc/apt/sources.list.d/contrib.list
-        echo deb http://deb.debian.org/debian stretch-backports main contrib > /etc/apt/sources.list.d/backports.list
+        echo "deb http://ftp.debian.org/debian buster main contrib" > /etc/apt/sources.list.d/contrib.list
     else
         echo "can't find sources file"
         exit 1
@@ -36,8 +34,8 @@ fi
 apt update
 
 # 1.5 Install ZFS in the Live CD environment
-apt install --yes debootstrap gdisk dkms dpkg-dev linux-headers-$(uname -r)
-apt install --yes -t stretch-backports zfs-dkms
+apt install --yes debootstrap gdisk dpkg-dev linux-headers-$(uname -r)
+apt install --yes zfs-dkms
 modprobe zfs
 
 # 2.2 Partition your disk
@@ -49,11 +47,11 @@ if [ $INSTALL_TYPE == "whole_disk" ];then
 
     # 2.2 Partition your disk
     # Run this for UEFI booting (for use now or in the future):
-    sgdisk     -n2:1M:+512M -t2:EF00 /dev/disk/by-id/$DRIVE_ID
+    sgdisk     -n2:1M:+1024M -t2:EF00 /dev/disk/by-id/$DRIVE_ID
     export EFI_PART=/dev/disk/by-id/${DRIVE_ID}-part2
 
     # Run this for the boot pool:
-    sgdisk     -n3:0:+512M    -t3:BF01 /dev/disk/by-id/$DRIVE_ID
+    sgdisk     -n3:0:+1024M    -t3:BF01 /dev/disk/by-id/$DRIVE_ID
     export BOOT_PART=/dev/disk/by-id/${DRIVE_ID}-part3
 
     if [ $ENCRYPT == "no" ]; then
@@ -190,7 +188,7 @@ zfs create -o com.sun:auto-snapshot=false             ${ROOT_POOL_NAME}/var/lib/
 # chmod 1777 /mnt/tmp
 
 # 3.4 Install the minimal system
-debootstrap stretch /mnt
+debootstrap buster /mnt
 zfs set devices=off ${ROOT_POOL_NAME}
 
 # 4.1 Configure the hostname (change HOSTNAME to the desired hostname).
@@ -216,20 +214,8 @@ cat /mnt/etc/network/interfaces.d/${ETHERNET}
 # Add `contrib` archive area:
 sed -i "s/^/# /" /mnt/etc/apt/sources.list
 cat <<EOF >> /mnt/etc/apt/sources.list
-deb http://ftp.debian.org/debian stretch main contrib
-deb-src http://ftp.debian.org/debian stretch main contrib
-EOF
-
-cat <<EOF >/mnt/etc/apt/sources.list.d/stretch-backports.list
-deb http://deb.debian.org/debian stretch-backports main contrib
-deb-src http://deb.debian.org/debian stretch-backports main contrib
-EOF
-
-# Add backports
-cat <<EOF >/mnt/etc/apt/preferences.d/90_zfs
-Package: libnvpair1linux libuutil1linux libzfs2linux libzpool2linux spl-dkms zfs-dkms zfs-test zfsutils-linux zfsutils-linux-dev zfs-zed
-Pin: release n=stretch-backports
-Pin-Priority: 990
+deb http://deb.debian.org/debian buster main contrib
+deb-src http://deb.debian.org/debian buster main contrib
 EOF
 
 # 4.4  Bind the virtual filesystems from the LiveCD environment to the new system
@@ -241,12 +227,12 @@ mount --rbind /sys  /mnt/sys
 
 #chroot /mnt /bin/bash --login
 
-# following commands have to be copied/pasted to execute inside the chroot
+# Build a script to run in the chroot enbvironment
 cat <<END_OF_CHROOT >/mnt/usr/local/sbin/chroot_commands.sh
 #!/bin/bash
 set -e
 set -u
-# set -x # enable for more verboise output
+# set -x # enable for more verbose output
 
 # 4.5 Configure a basic system environment
 ln -s /proc/self/mounts /etc/mtab
@@ -277,13 +263,13 @@ echo PARTUUID=$(blkid -s PARTUUID -o value \
       ${EFI_PART}) \
       /boot/efi vfat nofail,x-systemd.device-timeout=1 0 1 >> /etc/fstab
 mount /boot/efi
-apt install --yes grub-efi-amd64 shim
+apt install --yes grub-efi-amd64 shim-helpers-amd64-signed shim-unsigned
 
 # 4.9 Setup system groups
 # addgroup --system lpadmin
 # addgroup --system sambashare
 
-# 4.9 [sic] Set a root password
+# 4.9 Set a root password
 echo "set a root password"
 passwd
 
@@ -376,7 +362,7 @@ chroot /mnt /usr/local/sbin/chroot_commands.sh
 
 # 6.3 Run these commands in the LiveCD environment to unmount all filesystems
 mount | grep -v zfs | tac | awk '/\/mnt/ {print $3}' | xargs -i{} umount -lf {}
-zpool export ${ROOT_POOL_NAME}
+zpool export -a
 
 # 6.4 Reboot
 # reboot
