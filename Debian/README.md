@@ -1,6 +1,6 @@
 # Debian ZFS Root
 
-Script to facilitate installing Debian Stretch on a ZFS root.
+Script to facilitate installing Debian Buster on a ZFS root.
 
 ## Inspiration
 
@@ -8,7 +8,7 @@ Script to facilitate installing Debian Stretch on a ZFS root.
 ](https://github.com/zfsonlinux/zfs/wiki/Debian-Buster-Root-on-ZFS) as of 2019-06-29.
 ). Any references to "instructions" below refer to the contents of this link.
 
-## Deviations from Debian Stretch Root on ZFS
+## Deviations from Debian Buster Root on ZFS
 
 The intent is to follow the instructions closely, however occasional problems cropped up that required further changes not included in the original instructions.
 
@@ -33,6 +33,7 @@ Second... I have difficulty following detailed instructions. In the long run it 
 There are other scripts that may suit your needs better than this.
 
 * https://github.com/hn/debian-stretch-zfs-root
+* https://github.com/hn/debian-buster-zfs-root
 
 ## Status
 
