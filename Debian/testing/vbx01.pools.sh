@@ -17,13 +17,12 @@ export INSTALL_TYPE="use_pools"
 
 if [ -e /etc/apt/sources.list ] 
 then
-    echo deb http://ftp.debian.org/debian stretch contrib > /etc/apt/sources.list
-    echo deb http://deb.debian.org/debian stretch-backports main contrib >> /etc/apt/sources.list
+    echo deb http://deb.debian.org/debian buster contrib >> /etc/apt/sources.list
 else
     if [ -d /etc/apt/sources.list.d ]
     then
-        echo "deb http://ftp.debian.org/debian stretch main contrib" > /etc/apt/sources.list.d/contrib.list
-        echo deb http://deb.debian.org/debian stretch-backports main contrib > /etc/apt/sources.list.d/backports.list
+        echo "deb http://deb.debian.org/debian buster contrib" >> /etc/apt/sources.list.d/contrib.list
+/backports.list
     else
         echo "can't find sources file"
         exit 1
@@ -33,11 +32,11 @@ apt update
 
 # 1.5 Install ZFS in the Live CD environment
 apt install --yes debootstrap gdisk dkms dpkg-dev linux-headers-$(uname -r)
-apt install --yes -t stretch-backports zfs-dkms
+apt install --yes zfs-dkms
 modprobe zfs
 
 
-DRIVE_ID=ata-VBOX_HARDDISK_VB11016b68-60bc19dc
+DRIVE_ID=ata-VBOX_HARDDISK_VB8e31b23e-5cb40ea3
 wipefs -a /dev/disk/by-id/$DRIVE_ID # useful if the drive already had ZFS pools
 sgdisk --zap-all /dev/disk/by-id/$DRIVE_ID
 # EFI
@@ -56,30 +55,30 @@ mkdosfs -F 32 -s 1 -n EFI /dev/disk/by-id/${DRIVE_ID}-part2
 # boot
 export BOOT_PART=/dev/disk/by-id/${DRIVE_ID}-part3
 zpool create -o ashift=12 -d \
-    -o feature@async_destroy=enabled \
-    -o feature@bookmarks=enabled \
-    -o feature@embedded_data=enabled \
-    -o feature@empty_bpobj=enabled \
-    -o feature@enabled_txg=enabled \
-    -o feature@extensible_dataset=enabled \
-    -o feature@filesystem_limits=enabled \
-    -o feature@hole_birth=enabled \
-    -o feature@large_blocks=enabled \
-    -o feature@lz4_compress=enabled \
-    -o feature@spacemap_histogram=enabled \
-    -o feature@userobj_accounting=enabled \
-    -O acltype=posixacl -O canmount=off -O compression=lz4 -O devices=off \
-    -O normalization=formD -O relatime=on -O xattr=sa \
-    -O mountpoint=/ -R /mnt -f \
+	-o feature@async_destroy=enabled \
+	-o feature@bookmarks=enabled \
+	-o feature@embedded_data=enabled \
+	-o feature@empty_bpobj=enabled \
+	-o feature@enabled_txg=enabled \
+	-o feature@extensible_dataset=enabled \
+	-o feature@filesystem_limits=enabled \
+	-o feature@hole_birth=enabled \
+	-o feature@large_blocks=enabled \
+	-o feature@lz4_compress=enabled \
+	-o feature@spacemap_histogram=enabled \
+	-o feature@userobj_accounting=enabled \
+	-O acltype=posixacl -O canmount=off -O compression=lz4 -O devices=off \
+	-O normalization=formD -O relatime=on -O xattr=sa \
+	-O mountpoint=/ -R /mnt -f \
     ${BOOT_POOL_NAME} $BOOT_PART
 
 # root
 export ROOT_PART=/dev/disk/by-id/${DRIVE_ID}-part4
-        zpool create -o ashift=12 \
-            -O acltype=posixacl -O canmount=off -O compression=lz4 \
-            -O dnodesize=auto -O normalization=formD -O relatime=on -O xattr=sa \
-            -O mountpoint=/ -R /mnt -f \
-            ${ROOT_POOL_NAME} $ROOT_PART
+zpool create -o ashift=12 \
+	-O acltype=posixacl -O canmount=off -O compression=lz4 \
+	-O dnodesize=auto -O normalization=formD -O relatime=on -O xattr=sa \
+	-O mountpoint=/ -R /mnt -f \
+    ${ROOT_POOL_NAME} $ROOT_PART
 
 #####
 
