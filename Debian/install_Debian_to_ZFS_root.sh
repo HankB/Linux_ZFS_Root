@@ -263,7 +263,7 @@ echo PARTUUID=$(blkid -s PARTUUID -o value \
       ${EFI_PART}) \
       /boot/efi vfat nofail,x-systemd.device-timeout=1 0 1 >> /etc/fstab
 mount /boot/efi
-apt install --yes grub-efi-amd64 shim-helpers-amd64-signed shim-unsigned
+apt install --yes grub-efi-amd64 shim-signed
 
 # 4.9 Setup system groups
 # addgroup --system lpadmin
