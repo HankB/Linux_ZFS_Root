@@ -21,11 +21,11 @@ fi
 # 1.4 Add contrib archive area
 if [ -e /etc/apt/sources.list ] 
 then
-    echo deb http://ftp.debian.org/debian buster contrib >> /etc/apt/sources.list
+    echo deb http://deb.debian.org/debian buster contrib >> /etc/apt/sources.list
 else
     if [ -d /etc/apt/sources.list.d ]
     then
-        echo "deb http://ftp.debian.org/debian buster main contrib" > /etc/apt/sources.list.d/contrib.list
+        echo "deb http://deb.debian.org/debian buster main contrib" > /etc/apt/sources.list.d/contrib.list
     else
         echo "can't find sources file"
         exit 1
@@ -188,7 +188,7 @@ zfs create -o com.sun:auto-snapshot=false             ${ROOT_POOL_NAME}/var/lib/
 # chmod 1777 /mnt/tmp
 
 # 3.4 Install the minimal system
-debootstrap buster /mnt
+debootstrap buster /mnt http://deb.debian.org/debian
 zfs set devices=off ${ROOT_POOL_NAME}
 
 # 4.1 Configure the hostname (change HOSTNAME to the desired hostname).
