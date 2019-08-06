@@ -2,7 +2,11 @@
 
 ## My Procedure
 
-Initial testing was performed on real hardware. As more options were added the need for additional testing became apparent and further testing has been performed on a VM. To facilitate this testing, I have expanded the `env.sh` script in some cases to prepare partitions and filesystems in some cases to more fully automate the test. My procedure is as follows.
+Initial testing was performed on real hardware. As more options were added the need for additional testing became apparent and further testing has been performed on a VM. To facilitate this testing, I have expanded the `env.sh` script in some cases to prepare partitions and filesystems to more fully automate the test.
+
+The test settings files may also provide a useful starting point tro customize a real installation, preparing partitions, filesystems and pools as desired.
+
+My procedure is as follows.
 
 1) Determine how to get the VM to boot the install ISO in EFI mode. For Virtualbox this required
 
@@ -33,7 +37,7 @@ There are times when the reboot goes to an EFI menu rather than the GRUB menu. I
 
 This directory contains the settings files I have used for the various tests. They also may need to be tailored for the drive ID.
 
-## Recording test results.
+## Recording test results
 
 At present I have a [Google Sheet](https://docs.google.com/spreadsheets/d/1aqDocC9FZhQqJpilyDI7LxOcShHNU8znhwk0IFEm-gQ/edit?usp=sharing) with a grid for possible combinations. My intent is to add a sheet for any commit that requires testing. (At present the grid does not include any testing for dual boot systems.)
 
