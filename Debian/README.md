@@ -5,8 +5,8 @@ Script to facilitate installing Debian Buster on a ZFS root.
 ## Inspiration
 
 [Debian Buster Root on ZFS
-](https://github.com/zfsonlinux/zfs/wiki/Debian-Buster-Root-on-ZFS) as of 2019-06-29.
-). Any references to "instructions" below refer to the contents of this link.
+](https://github.com/zfsonlinux/zfs/wiki/Debian-Buster-Root-on-ZFS) as of [2019-08-02](https://github.com/zfsonlinux/zfs/wiki/Debian-Buster-Root-on-ZFS/b0d40117ad36bc882d43adf2201f16fdf7faa08b).
+Any references to "instructions" below refer to the contents of this link.
 
 ## Deviations from Debian Buster Root on ZFS
 
