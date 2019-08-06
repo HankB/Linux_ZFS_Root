@@ -22,7 +22,7 @@ export BOOT_PART=
 
 # for INSTALL_TYPE=whole_disk
 
-export DRIVE_ID=ata-VBOX_HARDDISK_VBfafda65f-8b22812e
+export DRIVE_ID=ata-VBOX_HARDDISK_VB00fffca7-a109783a
 # specify only the last part of the path.
 # e,g `export DRIVE_ID=ata-SATA_SSD_18120612000764`
 

@@ -36,7 +36,7 @@ apt install --yes zfs-dkms
 modprobe zfs
 
 
-DRIVE_ID=ata-VBOX_HARDDISK_VB8e31b23e-5cb40ea3
+DRIVE_ID=ata-VBOX_HARDDISK_VB00fffca7-a109783a
 wipefs -a /dev/disk/by-id/$DRIVE_ID # useful if the drive already had ZFS pools
 sgdisk --zap-all /dev/disk/by-id/$DRIVE_ID
 # EFI
