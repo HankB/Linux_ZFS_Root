@@ -16,6 +16,7 @@ The intent is to follow the instructions closely, however occasional problems cr
 * The `-f` (force) flag is included in the `zpool create` commands because on too many occasions the command exited with a warning and indicated it could be overridden with this flag.
 * The device is wiped using `wipefs` of all previous filesystem signatures. This was added because a previous ZFS pool would cause `zpool create` to fail, even with the `-f` option. In the case of using existing partitions, this is applied to the partitions selected for the `bpool` and `rpool`.
 * The efi and boot partitions are increased to 1024MB to reduce the chance that they could fill up. (The boot partition in an existing installation filled due to snapshots.)
+* Specify the URL http://deb.debian.org/debian on the `debootstrap` command line. It is not clear to me what the default is.
 
 ## Limitations
 
