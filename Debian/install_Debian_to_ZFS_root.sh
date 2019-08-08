@@ -31,11 +31,39 @@ else
         exit 1
     fi
 fi
+
+# Optional
+
+# Make sure $BACKPORTS is set to something, default to 'no'
+if [ -z ${BACKPORTS+x} ]
+then
+    BACKPORTS="no"
+fi
+
+if [ "$BACKPORTS" = "yes" ]
+then
+    cat > /etc/apt/sources.list.d/buster-backports.list <<EOF
+    deb http://deb.debian.org/debian buster-backports main contrib
+    deb-src http://deb.debian.org/debian buster-backports main contrib
+EOF
+
+    cat >  /etc/apt/preferences.d/90_zfs <<EOF
+    Package: libnvpair1linux libuutil1linux libzfs2linux libzpool2linux spl-dkms zfs-dkms zfs-test zfsutils-linux zfsutils-linux-dev zfs-zed
+    Pin: release n=buster-backports
+    Pin-Priority: 990
+EOF
+fi
+
 apt update
 
 # 1.5 Install ZFS in the Live CD environment
 apt install --yes debootstrap gdisk dpkg-dev linux-headers-$(uname -r)
-apt install --yes zfs-dkms
+if [ "$BACKPORTS" = "yes" ]
+then
+    apt install --yes -t buster-backports zfs-dkms
+else
+    apt install --yes zfs-dkms
+fi
 modprobe zfs
 
 # 2.2 Partition your disk
@@ -218,6 +246,22 @@ deb http://deb.debian.org/debian buster main contrib
 deb-src http://deb.debian.org/debian buster main contrib
 EOF
 
+# Optional
+if [ "$BACKPORTS" = "yes" ]
+then
+    cat > /mnt/etc/apt/sources.list.d/buster-backports.list <<EOF
+    deb http://deb.debian.org/debian buster-backports main contrib
+    deb-src http://deb.debian.org/debian buster-backports main contrib
+EOF
+
+    cat >  /mnt/etc/apt/preferences.d/90_zfs <<EOF
+    Package: libnvpair1linux libuutil1linux libzfs2linux libzpool2linux spl-dkms zfs-dkms zfs-test zfsutils-linux zfsutils-linux-dev zfs-zed
+    Pin: release n=buster-backports
+    Pin-Priority: 990
+EOF
+fi
+
+
 # 4.4  Bind the virtual filesystems from the LiveCD environment to the new system
 # and `chroot` into it:
 
@@ -243,8 +287,12 @@ dpkg-reconfigure tzdata
 
 # 4.6 Install ZFS in the chroot environment for the new system
 apt install --yes dpkg-dev linux-headers-amd64 linux-image-amd64
-apt install --yes zfs-initramfs
-
+if [ "$BACKPORTS" = "yes" ]
+then
+    apt install --yes -t buster-backports zfs-initramfs
+else 
+    apt install --yes zfs-initramfs
+fi
 # 4.7 For LUKS installs only, setup crypttab:
 if [ $ENCRYPT == "yes" ]; then
     apt install --yes cryptsetup
