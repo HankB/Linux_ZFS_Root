@@ -130,6 +130,14 @@ export EFI_PART=/dev/disk/by-id/nvme-eui.000000000000001000080d02003e9b51-part2
 
 This option requires that the EFI partition be present as for `INSTALL_TYPE=use_partitions`. In addition the root and boot pools must be created.
 
+#### Other options
+
+```shell
+export USE_BACKPORTS=yes
+```
+Use backports as described at https://github.com/zfsonlinux/zfs/wiki/Debian
+
+#### Tips
 
 `ls -l /dev/disk/by-id` will identify disks and partitions. `ip addr` will show the Ethernet device. (This process requires Ethernet.) The partitions are conveniently created using `sgdisk` as shown in the instructions.
 
