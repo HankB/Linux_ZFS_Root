@@ -18,6 +18,28 @@ else
     source $1
 fi
 
+# Verify consistency of ENV vars
+
+# Make sure $BACKPORTS is set to something, default to 'no'
+if [ -z ${BACKPORTS+x} ]
+then
+    export BACKPORTS="no"
+fi
+
+# Make sure $EXPERIMENTAL is set to something, default to 'no'
+if [ -z ${EXPERIMENTAL+x} ]
+then
+    export EXPERIMENTAL="no"
+fi
+
+
+if [ "$BACKPORTS" = "yes" -a "$EXPERIMENTAL" = "yes" ]
+then
+    echo "cannot set both BACKPORTS and EXPERIMENTAL tro \"yes\""
+    exit 1
+fi
+
+
 # 1.4 Add contrib archive area
 if [ -e /etc/apt/sources.list ] 
 then
@@ -33,12 +55,6 @@ else
 fi
 
 # Optional
-
-# Make sure $BACKPORTS is set to something, default to 'no'
-if [ -z ${BACKPORTS+x} ]
-then
-    BACKPORTS="no"
-fi
 
 if [ "$BACKPORTS" = "yes" ]
 then
@@ -62,7 +78,28 @@ if [ "$BACKPORTS" = "yes" ]
 then
     apt install --yes -t buster-backports zfs-dkms
 else
-    apt install --yes zfs-dkms
+    if [ "$EXPERIMENTAL" = "yes" ]
+    then
+        apt install --yes git-buildpackage build-essential libattr1-dev \
+        libblkid-dev libselinux1-dev libssl-dev python3-cffi python3-setuptools \
+        python3-sphinx python3-all-dev uuid-dev zlib1g-dev
+        git clone https://salsa.debian.org/zfsonlinux-team/zfs.git
+        cd zfs
+        git checkout pristine-tar
+        git checkout experimental
+        gbp buildpackage --git-debian-branch=experimental -uc -us
+        cd ..
+        dpkg --install \
+        libnvpair1linux_0.8.1-3_amd64.deb \
+        libuutil1linux_0.8.1-3_amd64.deb \
+        libzfs2linux_0.8.1-3_amd64.deb \
+        libzpool2linux_0.8.1-3_amd64.deb \
+        zfs-dkms_0.8.1-3_all.deb \
+        zfsutils-linux_0.8.1-3_amd64.deb \
+        zfs-zed_0.8.1-3_amd64.deb
+    else
+        apt install --yes zfs-dkms
+    fi
 fi
 modprobe zfs
 
@@ -112,23 +149,49 @@ fi
 
 if [ $INSTALL_TYPE != "use_pools" ];then 
     # 2.3 Create the boot pool
-    zpool create -o ashift=12 -d \
-        -o feature@async_destroy=enabled \
-        -o feature@bookmarks=enabled \
-        -o feature@embedded_data=enabled \
-        -o feature@empty_bpobj=enabled \
-        -o feature@enabled_txg=enabled \
-        -o feature@extensible_dataset=enabled \
-        -o feature@filesystem_limits=enabled \
-        -o feature@hole_birth=enabled \
-        -o feature@large_blocks=enabled \
-        -o feature@lz4_compress=enabled \
-        -o feature@spacemap_histogram=enabled \
-        -o feature@userobj_accounting=enabled \
-        -O acltype=posixacl -O canmount=off -O compression=lz4 -O devices=off \
-        -O normalization=formD -O relatime=on -O xattr=sa \
-        -O mountpoint=/ -R /mnt -f \
-        ${BOOT_POOL_NAME} $BOOT_PART
+    if [ "$EXPERIMENTAL" = "yes" ]
+    then
+        zpool create -o ashift=12 -d \
+            -o feature@async_destroy=enabled \
+            -o feature@bookmarks=enabled \
+            -o feature@embedded_data=enabled \
+            -o feature@empty_bpobj=enabled \
+            -o feature@enabled_txg=enabled \
+            -o feature@extensible_dataset=enabled \
+            -o feature@filesystem_limits=enabled \
+            -o feature@hole_birth=enabled \
+            -o feature@large_blocks=enabled \
+            -o feature@lz4_compress=enabled \
+            -o feature@spacemap_histogram=enabled \
+            -o feature@userobj_accounting=enabled \
+            -o feature@zpool_checkpoint=enabled \
+            -o feature@spacemap_v2=enabled \
+            -o feature@project_quota=enabled \
+            -o feature@resilver_defer=enabled \
+            -o feature@allocation_classes=enabled \
+            -O acltype=posixacl -O canmount=off -O compression=lz4 -O devices=off \
+            -O normalization=formD -O relatime=on -O xattr=sa \
+            -O mountpoint=/ -R /mnt \
+            ${BOOT_POOL_NAME} $BOOT_PART
+    else
+        zpool create -o ashift=12 -d \
+            -o feature@async_destroy=enabled \
+            -o feature@bookmarks=enabled \
+            -o feature@embedded_data=enabled \
+            -o feature@empty_bpobj=enabled \
+            -o feature@enabled_txg=enabled \
+            -o feature@extensible_dataset=enabled \
+            -o feature@filesystem_limits=enabled \
+            -o feature@hole_birth=enabled \
+            -o feature@large_blocks=enabled \
+            -o feature@lz4_compress=enabled \
+            -o feature@spacemap_histogram=enabled \
+            -o feature@userobj_accounting=enabled \
+            -O acltype=posixacl -O canmount=off -O compression=lz4 -O devices=off \
+            -O normalization=formD -O relatime=on -O xattr=sa \
+            -O mountpoint=/ -R /mnt -f \
+            ${BOOT_POOL_NAME} $BOOT_PART
+    fi
 
     # 2.4 Create the root pool
     if [ $ENCRYPT == "no" ]; then
@@ -140,17 +203,27 @@ if [ $INSTALL_TYPE != "use_pools" ];then
             -O mountpoint=/ -R /mnt -f \
             ${ROOT_POOL_NAME} $ROOT_PART
     elif [ $ENCRYPT == "yes" ]; then
-        # 2.4b LUKS:
-        apt install --yes cryptsetup
-        cryptsetup luksFormat -c aes-xts-plain64 -s 512 -h sha256 $ROOT_PART
-        cryptsetup luksOpen $ROOT_PART luks1
-        zpool create -o ashift=12 \
-            -O acltype=posixacl -O canmount=off -O compression=lz4 \
-            -O dnodesize=auto -O normalization=formD -O relatime=on -O xattr=sa \
-            -O mountpoint=/ -R /mnt -f \
-            ${ROOT_POOL_NAME} /dev/mapper/luks1
-        # TODO make 'luks1' an ENV var to manage the situatin when there are other
-        # encrypted partitions. Or find the first available (unused) luks device.
+        if [ "$EXPERIMENTAL" = "yes" ]
+        then
+            zpool create -o ashift=12 \
+                -O acltype=posixacl -O canmount=off -O compression=lz4 \
+                -O dnodesize=auto -O normalization=formD -O relatime=on -O xattr=sa \
+                -O encryption=aes-256-gcm -O keylocation=prompt -O keyformat=passphrase \
+                -O mountpoint=/ -R /mnt \
+                ${ROOT_POOL_NAME} $ROOT_PART
+        else
+            # 2.4b LUKS:
+            apt install --yes cryptsetup
+            cryptsetup luksFormat -c aes-xts-plain64 -s 512 -h sha256 $ROOT_PART
+            cryptsetup luksOpen $ROOT_PART luks1
+            zpool create -o ashift=12 \
+                -O acltype=posixacl -O canmount=off -O compression=lz4 \
+                -O dnodesize=auto -O normalization=formD -O relatime=on -O xattr=sa \
+                -O mountpoint=/ -R /mnt -f \
+                ${ROOT_POOL_NAME} /dev/mapper/luks1
+            # TODO make 'luks1' an ENV var to manage the situation when there are other
+            # encrypted partitions. Or find the first available (unused) luks device.
+        fi
     else
         echo "Set ENCRYPT to \"yes\" or \"no\""
         exit 1
@@ -244,6 +317,10 @@ sed -i "s/^/# /" /mnt/etc/apt/sources.list
 cat <<EOF >> /mnt/etc/apt/sources.list
 deb http://deb.debian.org/debian buster main contrib
 deb-src http://deb.debian.org/debian buster main contrib
+
+deb http://security.debian.org/debian-security buster/updates main contrib
+deb-src http://security.debian.org/debian-security buster/updates main contrib
+
 EOF
 
 # Optional
@@ -287,28 +364,50 @@ dpkg-reconfigure tzdata
 
 # 4.6 Install ZFS in the chroot environment for the new system
 apt install --yes dpkg-dev linux-headers-amd64 linux-image-amd64
-if [ "$BACKPORTS" = "yes" ]
+if [ "\$EXPERIMENTAL" = "yes" ]
 then
-    apt install --yes -t buster-backports zfs-initramfs
-else 
-    apt install --yes zfs-initramfs
+    apt install --yes git-buildpackage build-essential dkms libattr1-dev \
+    libblkid-dev libselinux1-dev libssl-dev python3-cffi python3-setuptools \
+    python3-sphinx python3-all-dev uuid-dev zlib1g-dev
+    cd /root
+    git clone https://salsa.debian.org/zfsonlinux-team/zfs.git
+    cd zfs
+    git checkout pristine-tar
+    git checkout experimental
+    gbp buildpackage --git-debian-branch=experimental -uc -us
+    cd ..
+    dpkg --install \
+        libnvpair1linux_0.8.1-3_amd64.deb \
+        libuutil1linux_0.8.1-3_amd64.deb \
+        libzfs2linux_0.8.1-3_amd64.deb \
+        libzpool2linux_0.8.1-3_amd64.deb \
+        zfs-dkms_0.8.1-3_all.deb \
+        zfs-initramfs_0.8.1-3_all.deb \
+        zfsutils-linux_0.8.1-3_amd64.deb \
+        zfs-zed_0.8.1-3_amd64.deb
+else
+    if [ "\$BACKPORTS" = "yes" ]
+    then
+        apt install --yes -t buster-backports zfs-initramfs
+    else 
+        apt install --yes zfs-initramfs
+    fi
+    # 4.7 For LUKS installs only, setup crypttab:
+    if [ \$ENCRYPT == "yes" ]; then
+        apt install --yes cryptsetup
+        echo luks1 UUID=\$(blkid -s UUID -o value  \$ROOT_PART) none \
+            luks,discard,initramfs > /etc/crypttab
+    fi
 fi
-# 4.7 For LUKS installs only, setup crypttab:
-if [ $ENCRYPT == "yes" ]; then
-    apt install --yes cryptsetup
-    echo luks1 UUID=$(blkid -s UUID -o value  $ROOT_PART) none \
-        luks,discard,initramfs > /etc/crypttab
-fi
-
 # 4.7 Install GRUB
 # 4.7b Install GRUB for UEFI booting
-if [ $INSTALL_TYPE == "whole_disk" ];then
+if [ \$INSTALL_TYPE == "whole_disk" ];then
     apt install dosfstools
-    mkdosfs -F 32 -s 1 -n EFI ${EFI_PART}
+    mkdosfs -F 32 -s 1 -n EFI \${EFI_PART}
 fi
 mkdir /boot/efi
-echo PARTUUID=$(blkid -s PARTUUID -o value \
-      ${EFI_PART}) \
+echo PARTUUID=\$(blkid -s PARTUUID -o value \
+      \${EFI_PART}) \
       /boot/efi vfat nofail,x-systemd.device-timeout=1 0 1 >> /etc/fstab
 mount /boot/efi
 apt install --yes grub-efi-amd64 shim-signed
@@ -322,7 +421,7 @@ echo "set a root password"
 passwd
 
 # 4.10 Enable importing bpool
-cat <<EOF >/etc/systemd/system/zfs-import-${BOOT_POOL_NAME}.service
+cat <<EOF >/etc/systemd/system/zfs-import-\${BOOT_POOL_NAME}.service
 [Unit]
 DefaultDependencies=no
 Before=zfs-import-scan.service
@@ -331,13 +430,13 @@ Before=zfs-import-cache.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/sbin/zpool import -N -o cachefile=none ${BOOT_POOL_NAME}
+ExecStart=/sbin/zpool import -N -o cachefile=none \${BOOT_POOL_NAME}
 
 [Install]
 WantedBy=zfs-import.target
 EOF
 
-systemctl enable zfs-import-${BOOT_POOL_NAME}.service
+systemctl enable zfs-import-\${BOOT_POOL_NAME}.service
 
 # 4.11 Optional (but recommended): Mount a tmpfs to /tmp
 cp /usr/share/systemd/tmp.mount /etc/systemd/system/
@@ -380,27 +479,56 @@ umount /boot/efi
 
 # Everything else applies to both BIOS and UEFI booting:
 
-zfs set mountpoint=legacy ${BOOT_POOL_NAME}/BOOT/debian
-echo ${BOOT_POOL_NAME}/BOOT/debian /boot zfs \
-    nodev,relatime,x-systemd.requires=zfs-import-${BOOT_POOL_NAME}.service 0 0 >> /etc/fstab
 
-zfs set mountpoint=legacy ${ROOT_POOL_NAME}/var/log
-echo ${ROOT_POOL_NAME}/var/log /var/log zfs nodev,relatime 0 0 >> /etc/fstab
+if [ "\$EXPERIMENTAL" = "yes" ]
+then
+    zfs set mountpoint=legacy bpool/BOOT/debian
+    echo bpool/BOOT/debian /boot zfs \
+        nodev,relatime,x-systemd.requires=zfs-import-bpool.service 0 0 >> /etc/fstab
 
-zfs set mountpoint=legacy ${ROOT_POOL_NAME}/var/spool
-echo ${ROOT_POOL_NAME}/var/spool /var/spool zfs nodev,relatime 0 0 >> /etc/fstab
+    mkdir /etc/zfs/zfs-list.cache
+    touch /etc/zfs/zfs-list.cache/rpool
+    ln -s /usr/lib/zfs-linux/zed.d/history_event-zfs-list-cacher.sh /etc/zfs/zed.d
+    zed -F &
+    ZED_PID=\$!
 
-# If you created a /var/tmp dataset:
-zfs set mountpoint=legacy ${ROOT_POOL_NAME}/var/tmp
-echo ${ROOT_POOL_NAME}/var/tmp /var/tmp zfs nodev,relatime 0 0 >> /etc/fstab
+    # Verify that zed updated the cache by making sure this is not empty:
+    cat /etc/zfs/zfs-list.cache/rpool
 
-# If you created a /tmp dataset:
-# zfs set mountpoint=legacy ${ROOT_POOL_NAME}/tmp
-# echo ${ROOT_POOL_NAME}/tmp /tmp zfs nodev,relatime 0 0 >> /etc/fstab
+    # If it is empty, force a cache update and check again:
+    zfs set canmount=noauto rpool/ROOT/debian
+
+    # Stop zed:
+    # fg
+    # Press Ctrl-C.
+    sleep 5 # does zxed need time to work?
+    kill \$ZED_PID
+
+    # Fix the paths to eliminate /mnt:
+    sed -Ei "s|/mnt/?|/|" /etc/zfs/zfs-list.cache/rpool
+else
+    zfs set mountpoint=legacy \${BOOT_POOL_NAME}/BOOT/debian
+    echo \${BOOT_POOL_NAME}/BOOT/debian /boot zfs \
+        nodev,relatime,x-systemd.requires=zfs-import-${BOOT_POOL_NAME}.service 0 0 >> /etc/fstab
+
+    zfs set mountpoint=legacy \${ROOT_POOL_NAME}/var/log
+    echo \${ROOT_POOL_NAME}/var/log /var/log zfs nodev,relatime 0 0 >> /etc/fstab
+
+    zfs set mountpoint=legacy \${ROOT_POOL_NAME}/var/spool
+    echo \${ROOT_POOL_NAME}/var/spool /var/spool zfs nodev,relatime 0 0 >> /etc/fstab
+
+    # If you created a /var/tmp dataset:
+    zfs set mountpoint=legacy \${ROOT_POOL_NAME}/var/tmp
+    echo \${ROOT_POOL_NAME}/var/tmp /var/tmp zfs nodev,relatime 0 0 >> /etc/fstab
+
+    # If you created a /tmp dataset:
+    # zfs set mountpoint=legacy ${ROOT_POOL_NAME}/tmp
+    # echo \${ROOT_POOL_NAME}/tmp /tmp zfs nodev,relatime 0 0 >> /etc/fstab
+fi
 
 # 6.1 Snapshot the initial installation
-zfs snapshot ${ROOT_POOL_NAME}/ROOT/debian@install
-zfs snapshot ${BOOT_POOL_NAME}/BOOT/debian@install
+zfs snapshot \${ROOT_POOL_NAME}/ROOT/debian@install
+zfs snapshot \${BOOT_POOL_NAME}/BOOT/debian@install
 
 # 6.2 Exit from the chroot environment back to the LiveCD environment
 exit
@@ -413,5 +541,5 @@ mount | grep -v zfs | tac | awk '/\/mnt/ {print $3}' | xargs -i{} umount -lf {}
 zpool export -a
 
 # 6.4 Reboot
-# reboot
+echo reboot now
 
