@@ -212,7 +212,7 @@ if [ $INSTALL_TYPE != "use_pools" ];then
                 -O acltype=posixacl -O canmount=off -O compression=lz4 \
                 -O dnodesize=auto -O normalization=formD -O relatime=on -O xattr=sa \
                 -O encryption=aes-256-gcm -O keylocation=prompt -O keyformat=passphrase \
-                -O mountpoint=/ -R /mnt \
+                -O mountpoint=/ -R /mnt -f \
                 ${ROOT_POOL_NAME} $ROOT_PART
         else
             # 2.4b LUKS:
