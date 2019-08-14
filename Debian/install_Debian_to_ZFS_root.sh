@@ -80,23 +80,25 @@ then
 else
     if [ "$EXPERIMENTAL" = "yes" ]
     then
+        apt install --yes debootstrap gdisk dpkg-dev linux-headers-$(uname -r)
         apt install --yes git-buildpackage build-essential libattr1-dev \
         libblkid-dev libselinux1-dev libssl-dev python3-cffi python3-setuptools \
-        python3-sphinx python3-all-dev uuid-dev zlib1g-dev
+        python3-sphinx python3-all-dev uuid-dev zlib1g-dev \
+        libaio-dev libelf-dev libudev-dev
         git clone https://salsa.debian.org/zfsonlinux-team/zfs.git
         cd zfs
         git checkout pristine-tar
-        git checkout experimental
-        gbp buildpackage --git-debian-branch=experimental -uc -us
+        git checkout master
+        gbp buildpackage -uc -us
         cd ..
         dpkg --install \
-        libnvpair1linux_0.8.1-3_amd64.deb \
-        libuutil1linux_0.8.1-3_amd64.deb \
-        libzfs2linux_0.8.1-3_amd64.deb \
-        libzpool2linux_0.8.1-3_amd64.deb \
-        zfs-dkms_0.8.1-3_all.deb \
-        zfsutils-linux_0.8.1-3_amd64.deb \
-        zfs-zed_0.8.1-3_amd64.deb
+            libnvpair1linux_0.8.1-4_amd64.deb \
+            libuutil1linux_0.8.1-4_amd64.deb \
+            libzfs2linux_0.8.1-4_amd64.deb \
+            libzpool2linux_0.8.1-4_amd64.deb \
+            zfs-dkms_0.8.1-4_all.deb \
+            zfsutils-linux_0.8.1-4_amd64.deb \
+            zfs-zed_0.8.1-4_amd64.deb
     else
         apt install --yes zfs-dkms
     fi
@@ -131,6 +133,7 @@ if [ $INSTALL_TYPE == "whole_disk" ];then
     fi
     export ROOT_PART=/dev/disk/by-id/${DRIVE_ID}-part4
     partprobe  /dev/disk/by-id/$DRIVE_ID
+    sleep 3 # avoid '$BOOT_PART': No such file or directory 
 elif [ $INSTALL_TYPE == "use_partitions" ];then
     echo "using $ROOT_PART for root partition"
     echo "using $BOOT_PART for boot partition"
@@ -171,7 +174,7 @@ if [ $INSTALL_TYPE != "use_pools" ];then
             -o feature@allocation_classes=enabled \
             -O acltype=posixacl -O canmount=off -O compression=lz4 -O devices=off \
             -O normalization=formD -O relatime=on -O xattr=sa \
-            -O mountpoint=/ -R /mnt \
+            -O mountpoint=/ -R /mnt -f \
             ${BOOT_POOL_NAME} $BOOT_PART
     else
         zpool create -o ashift=12 -d \
@@ -366,25 +369,28 @@ dpkg-reconfigure tzdata
 apt install --yes dpkg-dev linux-headers-amd64 linux-image-amd64
 if [ "\$EXPERIMENTAL" = "yes" ]
 then
+    apt install --yes dpkg-dev linux-headers-amd64 linux-image-amd64
+
     apt install --yes git-buildpackage build-essential dkms libattr1-dev \
     libblkid-dev libselinux1-dev libssl-dev python3-cffi python3-setuptools \
-    python3-sphinx python3-all-dev uuid-dev zlib1g-dev
+    python3-sphinx python3-all-dev uuid-dev zlib1g-dev \
+    libaio-dev libelf-dev libudev-dev
     cd /root
     git clone https://salsa.debian.org/zfsonlinux-team/zfs.git
     cd zfs
     git checkout pristine-tar
-    git checkout experimental
-    gbp buildpackage --git-debian-branch=experimental -uc -us
+    git checkout master
+    gbp buildpackage -uc -us
     cd ..
     dpkg --install \
-        libnvpair1linux_0.8.1-3_amd64.deb \
-        libuutil1linux_0.8.1-3_amd64.deb \
-        libzfs2linux_0.8.1-3_amd64.deb \
-        libzpool2linux_0.8.1-3_amd64.deb \
-        zfs-dkms_0.8.1-3_all.deb \
-        zfs-initramfs_0.8.1-3_all.deb \
-        zfsutils-linux_0.8.1-3_amd64.deb \
-        zfs-zed_0.8.1-3_amd64.deb
+        libnvpair1linux_0.8.1-4_amd64.deb \
+        libuutil1linux_0.8.1-4_amd64.deb \
+        libzfs2linux_0.8.1-4_amd64.deb \
+        libzpool2linux_0.8.1-4_amd64.deb \
+        zfs-dkms_0.8.1-4_all.deb \
+        zfs-initramfs_0.8.1-4_all.deb \
+        zfsutils-linux_0.8.1-4_amd64.deb \
+        zfs-zed_0.8.1-4_amd64.deb
 else
     if [ "\$BACKPORTS" = "yes" ]
     then
@@ -501,7 +507,7 @@ then
     # Stop zed:
     # fg
     # Press Ctrl-C.
-    sleep 5 # does zxed need time to work?
+    sleep 5 # does zed need time to work?
     kill \$ZED_PID
 
     # Fix the paths to eliminate /mnt:
