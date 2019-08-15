@@ -38,8 +38,9 @@ There are other scripts that may suit your needs better than this.
 
 ## Status
 
-* Script is in process of being updated to support the instructions as of 2019-06-29 - install Debian Buster.
-* Testing has only been performed on the 'whole disk install w/out encryption.'
+* Script is current with the istructions listed at https://github.com/zfsonlinux/zfs/wiki/Debian-Buster-Root-on-ZFS (subject to the limitations listed above.)
+* Experimental installation (using 0.8.1-4 from the git repository) has been implemented.
+* Testing has not been performed on all cases at this time.
 
 ## WARNING WILL ROBINSON
 
