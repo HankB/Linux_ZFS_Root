@@ -135,7 +135,12 @@ This option requires that the EFI partition be present as for `INSTALL_TYPE=use_
 ```shell
 export USE_BACKPORTS=yes
 ```
-Use backports as described at https://github.com/zfsonlinux/zfs/wiki/Debian
+Use backports as described at https://github.com/zfsonlinux/zfs/wiki/Debian. This will result in newer versions of ZFS to be used. Use with caution. I do not know what happens when a version change (e.g. 0.7.13 -> 0.8.1) happens. At present (2019-08-15) this will result in installation of version 0.7.13 vs. 0.7.12 in stable. In the relatively near future 0.8.x will make it to backports.
+
+```shell
+export EXPERIMENTAL=yes
+```
+This will download and build directly from the github repo for ZFS on Linux. It will break frequently. I do not know how or even if the installation can update based on commits to the repo. At present (2019-08-15) this installs 0.8.1-4.
 
 #### Tips
 
