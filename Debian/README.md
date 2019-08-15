@@ -52,7 +52,7 @@ Needless to say, I am not responsible for any data loss incurred as a result of 
 
 This process does not decommission an existing MD RAID (See step 2.1) It will zap any existing partitions on the selected drive (if `$INSTALL_TYPE == "whole_disk"`)
 
-If using an existing partition, it will create the pool on the indicated partition.
+If using existing partitions, it will create the pools on the indicated partitions. Two partitiona sre required.
 
 When using existing pools or partitions, it will not create or format the EFI partition. It is up to the user to create and format the EFI partition or point to one created by another install (e.g. Windows.)
 
