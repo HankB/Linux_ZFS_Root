@@ -424,7 +424,13 @@ apt install --yes grub-efi-amd64 shim-signed
 
 # 4.9 Set a root password
 echo "set a root password"
-passwd
+set +e
+while ! passwd 
+do
+	echo $?
+	echo try again
+done
+set -e
 
 # 4.10 Enable importing bpool
 cat <<EOF >/etc/systemd/system/zfs-import-\${BOOT_POOL_NAME}.service
