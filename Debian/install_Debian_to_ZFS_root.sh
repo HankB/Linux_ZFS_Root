@@ -411,8 +411,7 @@ if [ \$INSTALL_TYPE == "whole_disk" ];then
     mkdosfs -F 32 -s 1 -n EFI \${EFI_PART}
 fi
 mkdir /boot/efi
-echo PARTUUID=\$(blkid -s PARTUUID -o value \
-      \${EFI_PART}) \
+echo \${EFI_PART} \
       /boot/efi vfat nofail,x-systemd.device-timeout=1 0 1 >> /etc/fstab
 mount /boot/efi
 apt install --yes grub-efi-amd64 shim-signed
