@@ -369,7 +369,6 @@ dpkg-reconfigure tzdata
 apt install --yes dpkg-dev linux-headers-amd64 linux-image-amd64
 if [ "\$EXPERIMENTAL" = "yes" ]
 then
-    apt install --yes dpkg-dev linux-headers-amd64 linux-image-amd64
 
     apt install --yes git-buildpackage build-essential dkms libattr1-dev \
     libblkid-dev libselinux1-dev libssl-dev python3-cffi python3-setuptools \
@@ -412,8 +411,7 @@ if [ \$INSTALL_TYPE == "whole_disk" ];then
     mkdosfs -F 32 -s 1 -n EFI \${EFI_PART}
 fi
 mkdir /boot/efi
-echo PARTUUID=\$(blkid -s PARTUUID -o value \
-      \${EFI_PART}) \
+echo \${EFI_PART} \
       /boot/efi vfat nofail,x-systemd.device-timeout=1 0 1 >> /etc/fstab
 mount /boot/efi
 apt install --yes grub-efi-amd64 shim-signed
