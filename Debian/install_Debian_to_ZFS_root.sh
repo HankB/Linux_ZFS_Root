@@ -369,7 +369,6 @@ dpkg-reconfigure tzdata
 apt install --yes dpkg-dev linux-headers-amd64 linux-image-amd64
 if [ "\$EXPERIMENTAL" = "yes" ]
 then
-    apt install --yes dpkg-dev linux-headers-amd64 linux-image-amd64
 
     apt install --yes git-buildpackage build-essential dkms libattr1-dev \
     libblkid-dev libselinux1-dev libssl-dev python3-cffi python3-setuptools \
