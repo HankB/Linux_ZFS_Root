@@ -58,9 +58,9 @@ There are other scripts that may suit your needs better than this.
 
 ## Status
 
-* Script is current with the istructions listed at https://github.com/zfsonlinux/zfs/wiki/Debian-Buster-Root-on-ZFS (subject to the limitations listed above.)
+* Script is current with the intructions listed at https://github.com/zfsonlinux/zfs/wiki/Debian-Buster-Root-on-ZFS (subject to the limitations listed above.)
 * Experimental installation (using 0.8.1-4 from the git repository) has been implemented.
-* Testing has not been performed on all cases at this time.
+* All test cases have passed using Debian Live 10.0. 10.1 has not been tested.
 
 ## WARNING WILL ROBINSON
 
