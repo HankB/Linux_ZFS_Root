@@ -9,8 +9,24 @@ Testing has been completed using Debian Live media 10.0. 10.1 is out and has not
 ## Inspiration
 
 [Debian Buster Root on ZFS
-](https://github.com/zfsonlinux/zfs/wiki/Debian-Buster-Root-on-ZFS) as of [2019-08-02](https://github.com/zfsonlinux/zfs/wiki/Debian-Buster-Root-on-ZFS/b0d40117ad36bc882d43adf2201f16fdf7faa08b).
-Any references to "instructions" below refer to the contents of this link.
+](https://github.com/zfsonlinux/zfs/wiki/Debian-Buster-Root-on-ZFS) and [Debian Buster Encrypted Root on ZFS](https://github.com/zfsonlinux/zfs/wiki/Debian-Buster-Encrypted-Root-on-ZFS)as of [2019-08-13](https://github.com/zfsonlinux/zfs/wiki/Debian-Buster-Root-on-ZFS/b0d40117ad36bc882d43adf2201f16fdf7faa08b). The latter is referenced below and in the script as EXPERIMENTAL since it fetches the code directly form the ZFS github repo.
+Any references to "instructions" below refer to the contents of these links.
+
+## Roadmap
+
+The intent of this script is to automate the instructions linked above. Alternate pool configurations (e.g. RAIDZ5, mirror etc.) are left to the user. At present all functionality passes the tests listed at [Google Sheets](https://docs.google.com/spreadsheets/d/1aqDocC9FZhQqJpilyDI7LxOcShHNU8znhwk0IFEm-gQ/edit?usp=sharing) for commit 4c3fa56 and using Debian Live 10.0. On the same day the tests were completed, Debian 10.1 was released. Future testing will use 10.1 when additional features/fizes are to be tested.
+
+The need for testing can come from several external sources.
+
+* Bug reports, pull requests and/or feature requests.
+* Upgrade of backports to a new version of ZFS (presently 7.13, could be 8.1 next.)
+* Upgrade of the ZFS repo - presently at 8.1.
+
+When the script changes tro accommodate any of these, all tests will be repeated.
+
+Producing a "release" is the next planned effort.
+
+The next effort after that will be to revise the test scripts. They have grown in an ad-hoc fashion as testing has been performed on different machines. They can be configured such that the same script will work on all test enviroments (presently Virtualbox VMs.) And each of the 18 test cases will get its own script.
 
 ## Deviations from Debian Buster Root on ZFS
 
