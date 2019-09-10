@@ -2,6 +2,10 @@
 
 Script to facilitate installing Debian Buster on a ZFS root.
 
+# Note
+
+Testing has been completed using Debian Live media 10.0. 10.1 is out and has not yet been tested. There is no expectation that this will present any problem. Nevertheless, it has not been tested and if used and has problems, file an issue and try 10.0.
+
 ## Inspiration
 
 [Debian Buster Root on ZFS
