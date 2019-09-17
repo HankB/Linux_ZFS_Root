@@ -6,6 +6,11 @@ Script to facilitate installing Debian Buster on a ZFS root.
 
 Testing has been completed using Debian Live media 10.0. 10.1 is out and has not yet been tested. There is no expectation that this will present any problem. Nevertheless, it has not been tested and if used and has problems, file an issue and try 10.0.
 
+As of 2019-09-17, ZFS 0.8.1 is available in backports. This version supports native ZFS encryption, however the script will use LUKS encryption if `ENCRYPT=yes` and `BACKPORTS=yes` are specified. (Until the script is modified.) At present there are two ways to get native encryption:
+
+* use EXPERIMENTAL=yes (and ENCRYPT=yes) with `INSTALL_TYPE="whole_disk"` or `INSTALL_TYPE="use_partitions"`
+* use `INSTALL_TYPE="use_pools"` and `BACKPORTS="yes"`, and create a native encrypted root pool manually. This is not tested but should work.
+
 ## Inspiration
 
 [Debian Buster Root on ZFS
