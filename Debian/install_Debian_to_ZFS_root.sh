@@ -11,10 +11,6 @@ set -euo pipefail
 # set -o pipefail   # check exit status of all commands in pipeline
 # set -x            # expand commands - for debugging
 
-set -e      # exit on error
-set -u      # treat unset variables as errors
-# set -x      # expand commands - for debugging
-
 if [ "$#"  == 0 ]; then
     echo 'using default ENV vars (env.sh)'
     source env.sh
@@ -35,6 +31,12 @@ fi
 if [ -z ${EXPERIMENTAL+x} ]
 then
     export EXPERIMENTAL="no"
+fi
+
+# Make sure $ENCRYPT is set to something, default to 'no'
+if [ -z ${ENCRYPT+x} ]
+then
+    export ENCRYPT="no"
 fi
 
 
@@ -126,15 +128,12 @@ if [ $INSTALL_TYPE == "whole_disk" ];then
     sgdisk     -n3:0:+1024M    -t3:BF01 /dev/disk/by-id/$DRIVE_ID
     export BOOT_PART=/dev/disk/by-id/${DRIVE_ID}-part3
 
-    if [ $ENCRYPT == "no" ]; then
-        # 2.2a Unencrypted
-        sgdisk     -n4:0:0      -t4:BF01 /dev/disk/by-id/$DRIVE_ID
-    elif [ $ENCRYPT == "yes" ]; then
+    if [[  $ENCRYPT == "yes" && "$BACKPORTS" == "no" && "$EXPERIMENTAL" == "no" ]]; then
         # 2.2b LUKS:
         sgdisk     -n4:0:0      -t4:8300 /dev/disk/by-id/$DRIVE_ID
-    else
-        echo "Set ENCRYPT to \"yes\" or \"no\""
-        exit 1
+    else 
+        # 2.2a Unencrypted
+        sgdisk     -n4:0:0      -t4:BF01 /dev/disk/by-id/$DRIVE_ID
     fi
     export ROOT_PART=/dev/disk/by-id/${DRIVE_ID}-part4
     partprobe  /dev/disk/by-id/$DRIVE_ID
@@ -157,7 +156,7 @@ fi
 
 if [ $INSTALL_TYPE != "use_pools" ];then 
     # 2.3 Create the boot pool
-    if [ "$EXPERIMENTAL" = "yes" ]
+    if [[ "$EXPERIMENTAL" == "yes" || "$BACKPORTS" == "yes" ]]
     then
         zpool create -o ashift=12 -d \
             -o feature@async_destroy=enabled \
@@ -211,8 +210,9 @@ if [ $INSTALL_TYPE != "use_pools" ];then
             -O mountpoint=/ -R /mnt -f \
             ${ROOT_POOL_NAME} $ROOT_PART
     elif [ $ENCRYPT == "yes" ]; then
-        if [ "$EXPERIMENTAL" = "yes" ]
+        if [[ "$EXPERIMENTAL" == "yes" || "$BACKPORTS" == "yes" ]]
         then
+            # native ZFS encryption
             zpool create -o ashift=12 \
                 -O acltype=posixacl -O canmount=off -O compression=lz4 \
                 -O dnodesize=auto -O normalization=formD -O relatime=on -O xattr=sa \
@@ -403,7 +403,7 @@ else
         apt install --yes zfs-initramfs
     fi
     # 4.7 For LUKS installs only, setup crypttab:
-    if [ \$ENCRYPT == "yes" ]; then
+    if [ \$ENCRYPT == "yes" && "\$BACKPORTS" == "no"]; then
         apt install --yes cryptsetup
         echo luks1 UUID=\$(blkid -s UUID -o value  \$ROOT_PART) none \
             luks,discard,initramfs > /etc/crypttab
