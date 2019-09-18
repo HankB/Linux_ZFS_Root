@@ -359,9 +359,12 @@ mount --rbind /sys  /mnt/sys
 # Build a script to run in the chroot enbvironment
 cat <<END_OF_CHROOT >/mnt/usr/local/sbin/chroot_commands.sh
 #!/bin/bash
-set -e
-set -u
-# set -x # enable for more verbose output
+
+set -euo pipefail
+# set -e            # exit on error
+# set -u            # treat unset variables as errors
+# set -o pipefail   # check exit status of all commands in pipeline
+# set -x            # expand commands - for debugging
 
 # 4.5 Configure a basic system environment
 ln -s /proc/self/mounts /etc/mtab
