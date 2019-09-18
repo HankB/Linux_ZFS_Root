@@ -5,6 +5,11 @@
 if [[ $EUID -ne 0 ]]; then
     exec sudo "$0" "$@"
 fi
+set -euo pipefail
+# set -e            # exit on error
+# set -u            # treat unset variables as errors
+# set -o pipefail   # check exit status of all commands in pipeline
+# set -x            # expand commands - for debugging
 
 set -e      # exit on error
 set -u      # treat unset variables as errors
