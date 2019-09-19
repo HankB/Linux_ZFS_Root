@@ -406,7 +406,7 @@ else
         apt install --yes zfs-initramfs
     fi
     # 4.7 For LUKS installs only, setup crypttab:
-    if [ \$ENCRYPT == "yes" && "\$BACKPORTS" == "no"]; then
+    if [[ \$ENCRYPT == "yes" && "\$BACKPORTS" == "no" ]]; then
         apt install --yes cryptsetup
         echo luks1 UUID=\$(blkid -s UUID -o value  \$ROOT_PART) none \
             luks,discard,initramfs > /etc/crypttab
