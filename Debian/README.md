@@ -4,12 +4,9 @@ Script to facilitate installing Debian Buster on a ZFS root.
 
 # Note
 
-Testing has been completed using Debian Live media 10.0. 10.1 is out and has not yet been tested. There is no expectation that this will present any problem. Nevertheless, it has not been tested and if used and has problems, file an issue and try 10.0.
+Limited testing has been performed with Debian 10.1 Live (Gnome) ISO and no issues cropped up.
 
-As of 2019-09-17, ZFS 0.8.1 is available in backports. This version supports native ZFS encryption, however the script will use LUKS encryption if `ENCRYPT=yes` and `BACKPORTS=yes` are specified. (Until the script is modified.) At present there are two ways to get native encryption:
-
-* use EXPERIMENTAL=yes (and ENCRYPT=yes) with `INSTALL_TYPE="whole_disk"` or `INSTALL_TYPE="use_partitions"`
-* use `INSTALL_TYPE="use_pools"` and `BACKPORTS="yes"`, and create a native encrypted root pool manually. This is not tested but should work.
+As of 2019-09-21 the instructions no longer support the EXPERIMENTAL branch and have been simplified to use backports for all installs. The instructions no longer list LUKS encryption. A release (with very limited testing) has been put out which strill supports non-backports install and LUKS encryption in that situation. The next release will only use backports and native ZFS encryption.
 
 ## Inspiration
 
@@ -24,12 +21,12 @@ The intent of this script is to automate the instructions linked above. Alternat
 The need for testing can come from several external sources.
 
 * Bug reports, pull requests and/or feature requests.
-* Upgrade of backports to a new version of ZFS (presently 7.13, could be 8.1 next.)
-* Upgrade of the ZFS repo - presently at 8.1.
+* Upgrade of backports to a new version of ZFS (presently 8.1, could be 8.2 soon.)
 
-When the script changes tro accommodate any of these, all tests will be repeated.
+When the script changes to accommodate either of these, all tests will be repeated.
 
-Producing a "release" is the next planned effort.
+The next effort will be to bring the script into compliance with the instructrions (eliminating the BACKPORTS and EXPERIMENTAL options. BACKPORTS will be the default and
+EXPERIMENTAL may be eliminated.)
 
 The next effort after that will be to revise the test scripts. They have grown in an ad-hoc fashion as testing has been performed on different machines. They can be configured such that the same script will work on all test enviroments (presently Virtualbox VMs.) And each of the 18 test cases will get its own script.
 
@@ -37,16 +34,16 @@ The next effort after that will be to revise the test scripts. They have grown i
 
 The intent is to follow the instructions closely, however occasional problems cropped up that required further changes not included in the original instructions.
 
-* The script supports the capability to install dual boot with Windows or other Linux distros. It is entirely possible that it will not work with all distros. At present any problems encountered have resulted in failure to install and have not caused a problem with existing installations. Nevertheless is is highly recommended to back up the drive before proceeding. (I can backup a 120GB drive to my local file server in about 5 minutes.)
+* The script supports the capability to install dual boot with Windows or other Linux distros. It is entirely possible that it will not work with all distros. At present any problems encountered have resulted in failure to install and have not caused a problem with existing installations. Nevertheless is is highly recommended to back up the drive before proceeding. (I can backup a 120GB drive to my local file server in about 15 minutes.)
 * The `-f` (force) flag is included in the `zpool create` commands because on too many occasions the command exited with a warning and indicated it could be overridden with this flag.
 * The device is wiped using `wipefs` of all previous filesystem signatures. This was added because a previous ZFS pool would cause `zpool create` to fail, even with the `-f` option. In the case of using existing partitions, this is applied to the partitions selected for the `bpool` and `rpool`.
-* The efi and boot partitions are increased to 1024MB to reduce the chance that they could fill up. (The boot partition in an existing installation filled due to snapshots.)
+* The EFI and boot partitions are increased to 1024MB to reduce the chance that they could fill up. (The boot partition in an existing installation filled due to snapshots.)
 * Specify the URL http://deb.debian.org/debian on the `debootstrap` command line. It is not clear to me what the default is.
 
 ## Limitations
 
-* UEFI support only. All of my PCs on which I would use this support UEFI and I have found advantages to using that. In the case of dual boot support it will use the existing UEFI partition.
-* The script requires interaction. Some commands could probably be fully automated but at present it is necessary to acknowledge a popup regarding the ZFS license. (Be careful entering the new root password as the script aborts on any errors.)
+* UEFI support only. All of my PCs on which I would use this support UEFI and I have found advantages to using that. In the case of dual boot support it will use the existing UEFI partition (unless specific partitions are specified.)
+* The script requires interaction. Some commands could probably be fully automated but at present it is necessary to acknowledge a popup regarding the ZFS license.
 
 ## Motivation
 
@@ -63,9 +60,9 @@ There are other scripts that may suit your needs better than this.
 
 ## Status
 
-* Script is current with the intructions listed at https://github.com/zfsonlinux/zfs/wiki/Debian-Buster-Root-on-ZFS (subject to the limitations listed above.)
+* Script is current with the intructions listed at https://github.com/zfsonlinux/zfs/wiki/Debian-Buster-Root-on-ZFS (subject to the limitations listed above.) (Note: It is still catching up.)
 * Experimental installation (using 0.8.1-4 from the git repository) has been implemented.
-* All test cases have passed using Debian Live 10.0. 10.1 has not been tested.
+* A few test cases have passed using Debian Live 10.1 which is now recommended.
 
 ## WARNING WILL ROBINSON
 
@@ -77,7 +74,7 @@ Needless to say, I am not responsible for any data loss incurred as a result of 
 
 This process does not decommission an existing MD RAID (See step 2.1) It will zap any existing partitions on the selected drive (if `$INSTALL_TYPE == "whole_disk"`)
 
-If using existing partitions, it will create the pools on the indicated partitions. Two partitiona sre required.
+If using existing partitions, it will create the pools on the indicated partitions. Two partition are required for pools and one for EFI.
 
 When using existing pools or partitions, it will not create or format the EFI partition. It is up to the user to create and format the EFI partition or point to one created by another install (e.g. Windows.)
 
