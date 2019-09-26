@@ -404,7 +404,6 @@ else
         apt install --yes -t buster-backports zfs-initramfs
     else 
         apt install --yes zfs-initramfs
-    fi
         # 4.7 For LUKS installs only, setup crypttab:
         if [ "\$ENCRYPT" = "yes" ]; then
             apt install --yes cryptsetup
