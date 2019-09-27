@@ -70,7 +70,7 @@ if [ $INSTALL_TYPE == "whole_disk" ];then
 
     # 2.2 Partition your disk
     # Run this for UEFI booting (for use now or in the future):
-    sgdisk     -n2:1M:+1024M -t2:EF00 /dev/disk/by-id/$DRIVE_ID
+    sgdisk     -n2:1M:+512M -t2:EF00 /dev/disk/by-id/$DRIVE_ID
     export EFI_PART=/dev/disk/by-id/${DRIVE_ID}-part2
 
     # Run this for the boot pool:
