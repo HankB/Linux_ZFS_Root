@@ -344,7 +344,7 @@ fi
 update-initramfs -u -k all
 
 # 5.3 Workaround GRUB's missing zpool-features support:
-sed -i "s/GRUB_CMDLINE_LINUX=\"/GRUB_CMDLINE_LINUX=\"root=ZFS=rpool\/ROOT\/debian /" /etc/default/grub
+sed -i "s/GRUB_CMDLINE_LINUX=\"/GRUB_CMDLINE_LINUX=\"root=ZFS=\${ROOT_POOL_NAME}\/ROOT\/debian /" /etc/default/grub
 
 # 5.4 Optional (but highly recommended): Make debugging GRUB easier
 sed -i "s/quiet//" /etc/default/grub
