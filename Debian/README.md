@@ -6,7 +6,7 @@ Script to facilitate installing Debian Buster on a ZFS root.
 
 Limited testing has been performed with Debian 10.1 Live (Gnome) ISO and no issues cropped up.
 
-Limited testing performed on this commit. (One test case passed - Shil it!) Instructions changed to add LUKS encryption back so the script will be modified accordingly. As soon as the script catches up with the instructions, more thorough testing will be performed. In the mean time, this README may not be current WRT the code.
+Limited testing performed on this commit. (One test case passed - Ship it!) The instructions I'm woprking from changed to add LUKS encryption back so the script will be modified accordingly. As soon as the script catches up with the instructions, more thorough testing will be performed. In the mean time, this README may not be current WRT the code.
 
 As of 2019-09-21 the instructions no longer support the EXPERIMENTAL branch and have been simplified to use backports for all installs. The instructions no longer list LUKS encryption. A release (with very limited testing) has been put out which still supports non-backports install and LUKS encryption in that situation. The next release will only use backports and native ZFS encryption. (Commit 7d48393 removes EXPERIMENTAL support but still options BACKPORTS and uses LUKS encryption when BACKPORTS="no".)
 
@@ -26,8 +26,8 @@ The need for testing can come from several external sources.
 
 When the script changes to accommodate either of these, all tests will be repeated.
 
-The next effort will be to bring the script into compliance with the instructrions (eliminating the BACKPORTS and EXPERIMENTAL options. BACKPORTS will be the default and
-EXPERIMENTAL has been eliminated.)
+The next effort will be to bring the script into compliance with the instructions (eliminating the BACKPORTS and EXPERIMENTAL options. BACKPORTS will be the default and
+EXPERIMENTAL has been eliminated.) Note: this work has been completed but not thoroughly tested.
 
 The next effort after that will be to revise the test scripts. They have grown in an ad-hoc fashion as testing has been performed on different machines. They can be configured such that the same script will work on all test enviroments (presently Virtualbox VMs.) And each of the 18 test cases will get its own script.
 
@@ -61,7 +61,8 @@ There are other scripts that may suit your needs better than this.
 
 ## Status
 
-* Most recent commit has had mionimal testing (EXPERIMENTAL removed, BACKPORTS next.)
+* Most recent commit has had minimal testing (EXPERIMENTAL removed, BACKPORTS next.)
+* Script has been checked with shellcheck and all reported issues resolved.
 * Script is current with the intructions listed at https://github.com/zfsonlinux/zfs/wiki/Debian-Buster-Root-on-ZFS (subject to the limitations listed above.) (Note: It is still catching up.)
 * A few test cases have passed using Debian Live 10.1 which is now recommended.
 
@@ -187,6 +188,8 @@ Boot the Debian Live USB. Note that to install using EFI it may be necessary to 
 ## Testing
 
 Please see the README in testing.
+
+In order to improve quality the script is now checked with the `shellcheck` script linter.
 
 ## Contributing
 
