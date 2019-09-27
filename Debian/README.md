@@ -6,7 +6,9 @@ Script to facilitate installing Debian Buster on a ZFS root.
 
 Limited testing has been performed with Debian 10.1 Live (Gnome) ISO and no issues cropped up.
 
-As of 2019-09-21 the instructions no longer support the EXPERIMENTAL branch and have been simplified to use backports for all installs. The instructions no longer list LUKS encryption. A release (with very limited testing) has been put out which still supports non-backports install and LUKS encryption in that situation. The next release will only use backports and native ZFS encryption. (Commit 7d48393 removes EXPERIMENTAL support but still options BACKPORTS and uses LUKS encryption when BADKPORTS="no".)
+Limited testing performed on this commit. (One test case passed - Shil it!) Instructions changed to add LUKS encryption back so the script will be modified accordingly. As soon as the script catches up with the instructions, more thorough testing will be performed. In the mean time, this README may not be current WRT the code.
+
+As of 2019-09-21 the instructions no longer support the EXPERIMENTAL branch and have been simplified to use backports for all installs. The instructions no longer list LUKS encryption. A release (with very limited testing) has been put out which still supports non-backports install and LUKS encryption in that situation. The next release will only use backports and native ZFS encryption. (Commit 7d48393 removes EXPERIMENTAL support but still options BACKPORTS and uses LUKS encryption when BACKPORTS="no".)
 
 ## Inspiration
 
