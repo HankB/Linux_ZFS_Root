@@ -61,7 +61,7 @@ apt install --yes debootstrap gdisk dpkg-dev linux-headers-$(uname -r)
 apt install --yes -t buster-backports zfs-dkms
 modprobe zfs
 
-# 2.2 Partition your disk
+# 2 Disk Formatting
 
 if [ $INSTALL_TYPE == "whole_disk" ];then
     # 2.1 If you are re-using a disk, clear it as necessary
@@ -133,7 +133,7 @@ if [ $INSTALL_TYPE != "use_pools" ];then
             -O mountpoint=/ -R /mnt -f \
             ${ROOT_POOL_NAME} $ROOT_PART
     elif [ $ENCRYPT == "yes" ]; then
-            # native ZFS encryption
+        # 2.4b Encrypted
         zpool create -o ashift=12 \
             -O acltype=posixacl -O canmount=off -O compression=lz4 \
             -O dnodesize=auto -O normalization=formD -O relatime=on -O xattr=sa \
@@ -236,7 +236,6 @@ deb-src http://deb.debian.org/debian buster main contrib
 
 deb http://security.debian.org/debian-security buster/updates main contrib
 deb-src http://security.debian.org/debian-security buster/updates main contrib
-
 EOF
 
 # Add backports to apt sources
@@ -295,11 +294,7 @@ echo \${EFI_PART} \
 mount /boot/efi
 apt install --yes grub-efi-amd64 shim-signed
 
-# 4.9 Setup system groups
-# addgroup --system lpadmin
-# addgroup --system sambashare
-
-# 4.9 Set a root password
+# 4.8 Set a root password
 echo "set a root password"
 set +e
 while ! passwd 
@@ -309,7 +304,7 @@ do
 done
 set -e
 
-# 4.10 Enable importing bpool
+# 4.9 Enable importing bpool
 cat <<EOF >/etc/systemd/system/zfs-import-\${BOOT_POOL_NAME}.service
 [Unit]
 DefaultDependencies=no
@@ -327,11 +322,11 @@ EOF
 
 systemctl enable zfs-import-\${BOOT_POOL_NAME}.service
 
-# 4.11 Optional (but recommended): Mount a tmpfs to /tmp
+# 4.10 Optional (but recommended): Mount a tmpfs to /tmp
 cp /usr/share/systemd/tmp.mount /etc/systemd/system/
 systemctl enable tmp.mount
 
-# 4.12 Optional (but kindly requested): Install popcon
+# 4.11 Optional (but kindly requested): Install popcon
 apt install --yes popularity-contest
 
 # 5.1 Verify that the ZFS root filesystem is recognized
