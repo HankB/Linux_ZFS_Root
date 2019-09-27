@@ -373,19 +373,25 @@ zfs set mountpoint=legacy \${BOOT_POOL_NAME}/BOOT/debian
 echo \${BOOT_POOL_NAME}/BOOT/debian /boot zfs \
     nodev,relatime,x-systemd.requires=zfs-import-${BOOT_POOL_NAME}.service 0 0 >> /etc/fstab
 
-zfs set mountpoint=legacy \${ROOT_POOL_NAME}/var/log
-echo \${ROOT_POOL_NAME}/var/log /var/log zfs nodev,relatime 0 0 >> /etc/fstab
+mkdir /etc/zfs/zfs-list.cache
+touch /etc/zfs/zfs-list.cache/\${ROOT_POOL_NAME}
+ln -s /usr/lib/zfs-linux/zed.d/history_event-zfs-list-cacher.sh /etc/zfs/zed.d
 
-zfs set mountpoint=legacy \${ROOT_POOL_NAME}/var/spool
-echo \${ROOT_POOL_NAME}/var/spool /var/spool zfs nodev,relatime 0 0 >> /etc/fstab
+zed -F &
+ZED_PID=\$!
 
-# If you created a /var/tmp dataset:
-zfs set mountpoint=legacy \${ROOT_POOL_NAME}/var/tmp
-echo \${ROOT_POOL_NAME}/var/tmp /var/tmp zfs nodev,relatime 0 0 >> /etc/fstab
+while ! ( [ -f /etc/zfs/zfs-list.cache/\${ROOT_POOL_NAME} ] && \
+          [ -s /etc/zfs/zfs-list.cache/\${ROOT_POOL_NAME} ] )
+do
+    sleep 3
+    # If it is empty, force a cache update and check again:
+    zfs set canmount=noauto \${ROOT_POOL_NAME}/ROOT/debian
+done
 
-# If you created a /tmp dataset:
-# zfs set mountpoint=legacy ${ROOT_POOL_NAME}/tmp
-# echo \${ROOT_POOL_NAME}/tmp /tmp zfs nodev,relatime 0 0 >> /etc/fstab
+kill \$ZED_PID
+
+# Fix the paths to eliminate /mnt:
+sed -Ei "s|/mnt/?|/|" /etc/zfs/zfs-list.cache/\${ROOT_POOL_NAME}
 
 # 6.1 Snapshot the initial installation
 zfs snapshot \${ROOT_POOL_NAME}/ROOT/debian@install
