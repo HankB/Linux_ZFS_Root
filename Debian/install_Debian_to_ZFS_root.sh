@@ -27,25 +27,11 @@ then
     export BACKPORTS="no"
 fi
 
-# Make sure $EXPERIMENTAL is set to something, default to 'no'
-if [ -z ${EXPERIMENTAL+x} ]
-then
-    export EXPERIMENTAL="no"
-fi
-
 # Make sure $ENCRYPT is set to something, default to 'no'
 if [ -z ${ENCRYPT+x} ]
 then
     export ENCRYPT="no"
 fi
-
-
-if [ "$BACKPORTS" = "yes" -a "$EXPERIMENTAL" = "yes" ]
-then
-    echo "cannot set both BACKPORTS and EXPERIMENTAL tro \"yes\""
-    exit 1
-fi
-
 
 # 1.4 Add contrib archive area
 if [ -e /etc/apt/sources.list ] 
@@ -85,30 +71,7 @@ if [ "$BACKPORTS" = "yes" ]
 then
     apt install --yes -t buster-backports zfs-dkms
 else
-    if [ "$EXPERIMENTAL" = "yes" ]
-    then
-        apt install --yes debootstrap gdisk dpkg-dev linux-headers-$(uname -r)
-        apt install --yes git-buildpackage build-essential libattr1-dev \
-        libblkid-dev libselinux1-dev libssl-dev python3-cffi python3-setuptools \
-        python3-sphinx python3-all-dev uuid-dev zlib1g-dev \
-        libaio-dev libelf-dev libudev-dev
-        git clone https://salsa.debian.org/zfsonlinux-team/zfs.git
-        cd zfs
-        git checkout pristine-tar
-        git checkout master
-        gbp buildpackage -uc -us
-        cd ..
-        dpkg --install \
-            libnvpair1linux_0.8.1-4_amd64.deb \
-            libuutil1linux_0.8.1-4_amd64.deb \
-            libzfs2linux_0.8.1-4_amd64.deb \
-            libzpool2linux_0.8.1-4_amd64.deb \
-            zfs-dkms_0.8.1-4_all.deb \
-            zfsutils-linux_0.8.1-4_amd64.deb \
-            zfs-zed_0.8.1-4_amd64.deb
-    else
-        apt install --yes zfs-dkms
-    fi
+    apt install --yes zfs-dkms
 fi
 modprobe zfs
 
@@ -128,10 +91,10 @@ if [ $INSTALL_TYPE == "whole_disk" ];then
     sgdisk     -n3:0:+1024M    -t3:BF01 /dev/disk/by-id/$DRIVE_ID
     export BOOT_PART=/dev/disk/by-id/${DRIVE_ID}-part3
 
-    if [[  $ENCRYPT == "yes" && "$BACKPORTS" == "no" && "$EXPERIMENTAL" == "no" ]]; then
+    if [[  $ENCRYPT == "yes" && "$BACKPORTS" == "no" ]]; then
         # 2.2b LUKS:
         sgdisk     -n4:0:0      -t4:8300 /dev/disk/by-id/$DRIVE_ID
-    else 
+    else
         # 2.2a Unencrypted
         sgdisk     -n4:0:0      -t4:BF01 /dev/disk/by-id/$DRIVE_ID
     fi
@@ -156,7 +119,7 @@ fi
 
 if [ $INSTALL_TYPE != "use_pools" ];then 
     # 2.3 Create the boot pool
-    if [[ "$EXPERIMENTAL" == "yes" || "$BACKPORTS" == "yes" ]]
+    if [[ "$BACKPORTS" == "yes" ]]
     then
         zpool create -o ashift=12 -d \
             -o feature@async_destroy=enabled \
@@ -210,7 +173,7 @@ if [ $INSTALL_TYPE != "use_pools" ];then
             -O mountpoint=/ -R /mnt -f \
             ${ROOT_POOL_NAME} $ROOT_PART
     elif [ $ENCRYPT == "yes" ]; then
-        if [[ "$EXPERIMENTAL" == "yes" || "$BACKPORTS" == "yes" ]]
+        if [[ "$BACKPORTS" == "yes" ]]
         then
             # native ZFS encryption
             zpool create -o ashift=12 \
@@ -375,43 +338,20 @@ dpkg-reconfigure tzdata
 
 # 4.6 Install ZFS in the chroot environment for the new system
 apt install --yes dpkg-dev linux-headers-amd64 linux-image-amd64
-if [ "\$EXPERIMENTAL" = "yes" ]
-then
 
-    apt install --yes git-buildpackage build-essential dkms libattr1-dev \
-    libblkid-dev libselinux1-dev libssl-dev python3-cffi python3-setuptools \
-    python3-sphinx python3-all-dev uuid-dev zlib1g-dev \
-    libaio-dev libelf-dev libudev-dev
-    cd /root
-    git clone https://salsa.debian.org/zfsonlinux-team/zfs.git
-    cd zfs
-    git checkout pristine-tar
-    git checkout master
-    gbp buildpackage -uc -us
-    cd ..
-    dpkg --install \
-        libnvpair1linux_0.8.1-4_amd64.deb \
-        libuutil1linux_0.8.1-4_amd64.deb \
-        libzfs2linux_0.8.1-4_amd64.deb \
-        libzpool2linux_0.8.1-4_amd64.deb \
-        zfs-dkms_0.8.1-4_all.deb \
-        zfs-initramfs_0.8.1-4_all.deb \
-        zfsutils-linux_0.8.1-4_amd64.deb \
-        zfs-zed_0.8.1-4_amd64.deb
+if [ "\$BACKPORTS" = "yes" ]
+then
+    apt install --yes -t buster-backports zfs-initramfs
 else
-    if [ "\$BACKPORTS" = "yes" ]
-    then
-        apt install --yes -t buster-backports zfs-initramfs
-    else 
-        apt install --yes zfs-initramfs
-        # 4.7 For LUKS installs only, setup crypttab:
-        if [ "\$ENCRYPT" = "yes" ]; then
-            apt install --yes cryptsetup
-            echo luks1 UUID=\$(blkid -s UUID -o value  \$ROOT_PART) none \
-                luks,discard,initramfs > /etc/crypttab
-        fi
+    apt install --yes zfs-initramfs
+    # 4.7 For LUKS installs only, setup crypttab:
+    if [ "\$ENCRYPT" = "yes" ]; then
+        apt install --yes cryptsetup
+        echo luks1 UUID=\$(blkid -s UUID -o value  \$ROOT_PART) none \
+            luks,discard,initramfs > /etc/crypttab
     fi
 fi
+
 # 4.7 Install GRUB
 # 4.7b Install GRUB for UEFI booting
 if [ \$INSTALL_TYPE == "whole_disk" ];then
@@ -498,51 +438,23 @@ umount /boot/efi
 # Everything else applies to both BIOS and UEFI booting:
 
 
-if [ "\$EXPERIMENTAL" = "yes" ]
-then
-    zfs set mountpoint=legacy bpool/BOOT/debian
-    echo bpool/BOOT/debian /boot zfs \
-        nodev,relatime,x-systemd.requires=zfs-import-bpool.service 0 0 >> /etc/fstab
+zfs set mountpoint=legacy \${BOOT_POOL_NAME}/BOOT/debian
+echo \${BOOT_POOL_NAME}/BOOT/debian /boot zfs \
+    nodev,relatime,x-systemd.requires=zfs-import-${BOOT_POOL_NAME}.service 0 0 >> /etc/fstab
 
-    mkdir /etc/zfs/zfs-list.cache
-    touch /etc/zfs/zfs-list.cache/rpool
-    ln -s /usr/lib/zfs-linux/zed.d/history_event-zfs-list-cacher.sh /etc/zfs/zed.d
-    zed -F &
-    ZED_PID=\$!
+zfs set mountpoint=legacy \${ROOT_POOL_NAME}/var/log
+echo \${ROOT_POOL_NAME}/var/log /var/log zfs nodev,relatime 0 0 >> /etc/fstab
 
-    # Verify that zed updated the cache by making sure this is not empty:
-    cat /etc/zfs/zfs-list.cache/rpool
+zfs set mountpoint=legacy \${ROOT_POOL_NAME}/var/spool
+echo \${ROOT_POOL_NAME}/var/spool /var/spool zfs nodev,relatime 0 0 >> /etc/fstab
 
-    # If it is empty, force a cache update and check again:
-    zfs set canmount=noauto rpool/ROOT/debian
+# If you created a /var/tmp dataset:
+zfs set mountpoint=legacy \${ROOT_POOL_NAME}/var/tmp
+echo \${ROOT_POOL_NAME}/var/tmp /var/tmp zfs nodev,relatime 0 0 >> /etc/fstab
 
-    # Stop zed:
-    # fg
-    # Press Ctrl-C.
-    sleep 5 # does zed need time to work?
-    kill \$ZED_PID
-
-    # Fix the paths to eliminate /mnt:
-    sed -Ei "s|/mnt/?|/|" /etc/zfs/zfs-list.cache/rpool
-else
-    zfs set mountpoint=legacy \${BOOT_POOL_NAME}/BOOT/debian
-    echo \${BOOT_POOL_NAME}/BOOT/debian /boot zfs \
-        nodev,relatime,x-systemd.requires=zfs-import-${BOOT_POOL_NAME}.service 0 0 >> /etc/fstab
-
-    zfs set mountpoint=legacy \${ROOT_POOL_NAME}/var/log
-    echo \${ROOT_POOL_NAME}/var/log /var/log zfs nodev,relatime 0 0 >> /etc/fstab
-
-    zfs set mountpoint=legacy \${ROOT_POOL_NAME}/var/spool
-    echo \${ROOT_POOL_NAME}/var/spool /var/spool zfs nodev,relatime 0 0 >> /etc/fstab
-
-    # If you created a /var/tmp dataset:
-    zfs set mountpoint=legacy \${ROOT_POOL_NAME}/var/tmp
-    echo \${ROOT_POOL_NAME}/var/tmp /var/tmp zfs nodev,relatime 0 0 >> /etc/fstab
-
-    # If you created a /tmp dataset:
-    # zfs set mountpoint=legacy ${ROOT_POOL_NAME}/tmp
-    # echo \${ROOT_POOL_NAME}/tmp /tmp zfs nodev,relatime 0 0 >> /etc/fstab
-fi
+# If you created a /tmp dataset:
+# zfs set mountpoint=legacy ${ROOT_POOL_NAME}/tmp
+# echo \${ROOT_POOL_NAME}/tmp /tmp zfs nodev,relatime 0 0 >> /etc/fstab
 
 # 6.1 Snapshot the initial installation
 zfs snapshot \${ROOT_POOL_NAME}/ROOT/debian@install
