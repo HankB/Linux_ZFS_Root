@@ -37,7 +37,8 @@ then
 else
     if [ -d /etc/apt/sources.list.d ]
     then
-        echo "deb http://deb.debian.org/debian buster main contrib" > /etc/apt/sources.list.d/contrib.list
+        echo "deb http://deb.debian.org/debian buster main contrib" > \
+            /etc/apt/sources.list.d/contrib.list
     else
         echo "can't find sources file"
         exit 1
@@ -52,7 +53,8 @@ deb-src http://deb.debian.org/debian buster-backports main contrib
 EOF
 
 cat >  /etc/apt/preferences.d/90_zfs <<EOF
-Package: libnvpair1linux libuutil1linux libzfs2linux libzpool2linux spl-dkms zfs-dkms zfs-test zfsutils-linux zfsutils-linux-dev zfs-zed
+Package: libnvpair1linux libuutil1linux libzfs2linux libzpool2linux spl-dkms zfs-dkms \
+         zfs-test zfsutils-linux zfsutils-linux-dev zfs-zed
 Pin: release n=buster-backports
 Pin-Priority: 990
 EOF
@@ -68,7 +70,7 @@ modprobe zfs
 
 if [ "$INSTALL_TYPE" == "whole_disk" ];then
     # 2.1 If you are re-using a disk, clear it as necessary
-    wipefs -a /dev/disk/by-id/"$DRIVE_ID"     # useful if the drive already had ZFS pools
+    wipefs -a /dev/disk/by-id/"$DRIVE_ID"   # useful if the drive already had ZFS pools
     sgdisk --zap-all /dev/disk/by-id/"$DRIVE_ID"
 
     # 2.2 Partition your disk
@@ -249,7 +251,8 @@ deb-src http://deb.debian.org/debian buster-backports main contrib
 EOF
 
 cat >  /mnt/etc/apt/preferences.d/90_zfs <<EOF
-Package: libnvpair1linux libuutil1linux libzfs2linux libzpool2linux spl-dkms zfs-dkms zfs-test zfsutils-linux zfsutils-linux-dev zfs-zed
+Package: libnvpair1linux libuutil1linux libzfs2linux libzpool2linux spl-dkms zfs-dkms \
+         zfs-test zfsutils-linux zfsutils-linux-dev zfs-zed
 Pin: release n=buster-backports
 Pin-Priority: 990
 EOF
@@ -342,7 +345,8 @@ fi
 update-initramfs -u -k all
 
 # 5.3 Workaround GRUB's missing zpool-features support:
-sed -i "s|^GRUB_CMDLINE_LINUX=\"|GRUB_CMDLINE_LINUX=\"root=ZFS=\${ROOT_POOL_NAME}/ROOT/debian |" /etc/default/grub
+sed -i "s|^GRUB_CMDLINE_LINUX=\"|GRUB_CMDLINE_LINUX=\"root=ZFS=\${ROOT_POOL_NAME}/ROOT/debian |" \
+        /etc/default/grub
 
 # 5.4 Optional (but highly recommended): Make debugging GRUB easier
 sed -i "s/quiet//" /etc/default/grub
