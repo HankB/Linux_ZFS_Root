@@ -21,12 +21,6 @@ fi
 
 # Verify consistency of ENV vars
 
-# Make sure $BACKPORTS is set to something, default to 'no'
-if [ -z ${BACKPORTS+x} ]
-then
-    export BACKPORTS="no"
-fi
-
 # Make sure $ENCRYPT is set to something, default to 'no'
 if [ -z ${ENCRYPT+x} ]
 then
@@ -47,32 +41,24 @@ else
     fi
 fi
 
-# Optional
+# Add backports to apt sources.
 
-if [ "$BACKPORTS" = "yes" ]
-then
-    cat > /etc/apt/sources.list.d/buster-backports.list <<EOF
-    deb http://deb.debian.org/debian buster-backports main contrib
-    deb-src http://deb.debian.org/debian buster-backports main contrib
+cat > /etc/apt/sources.list.d/buster-backports.list <<EOF
+deb http://deb.debian.org/debian buster-backports main contrib
+deb-src http://deb.debian.org/debian buster-backports main contrib
 EOF
 
-    cat >  /etc/apt/preferences.d/90_zfs <<EOF
-    Package: libnvpair1linux libuutil1linux libzfs2linux libzpool2linux spl-dkms zfs-dkms zfs-test zfsutils-linux zfsutils-linux-dev zfs-zed
-    Pin: release n=buster-backports
-    Pin-Priority: 990
+cat >  /etc/apt/preferences.d/90_zfs <<EOF
+Package: libnvpair1linux libuutil1linux libzfs2linux libzpool2linux spl-dkms zfs-dkms zfs-test zfsutils-linux zfsutils-linux-dev zfs-zed
+Pin: release n=buster-backports
+Pin-Priority: 990
 EOF
-fi
 
 apt update
 
 # 1.5 Install ZFS in the Live CD environment
 apt install --yes debootstrap gdisk dpkg-dev linux-headers-$(uname -r)
-if [ "$BACKPORTS" = "yes" ]
-then
-    apt install --yes -t buster-backports zfs-dkms
-else
-    apt install --yes zfs-dkms
-fi
+apt install --yes -t buster-backports zfs-dkms
 modprobe zfs
 
 # 2.2 Partition your disk
@@ -91,13 +77,9 @@ if [ $INSTALL_TYPE == "whole_disk" ];then
     sgdisk     -n3:0:+1024M    -t3:BF01 /dev/disk/by-id/$DRIVE_ID
     export BOOT_PART=/dev/disk/by-id/${DRIVE_ID}-part3
 
-    if [[  $ENCRYPT == "yes" && "$BACKPORTS" == "no" ]]; then
-        # 2.2b LUKS:
-        sgdisk     -n4:0:0      -t4:8300 /dev/disk/by-id/$DRIVE_ID
-    else
-        # 2.2a Unencrypted
-        sgdisk     -n4:0:0      -t4:BF01 /dev/disk/by-id/$DRIVE_ID
-    fi
+    # 2.2a main pool 
+    sgdisk     -n4:0:0      -t4:BF01 /dev/disk/by-id/$DRIVE_ID
+
     export ROOT_PART=/dev/disk/by-id/${DRIVE_ID}-part4
     partprobe  /dev/disk/by-id/$DRIVE_ID
     sleep 3 # avoid '$BOOT_PART': No such file or directory 
@@ -119,53 +101,31 @@ fi
 
 if [ $INSTALL_TYPE != "use_pools" ];then 
     # 2.3 Create the boot pool
-    if [[ "$BACKPORTS" == "yes" ]]
-    then
-        zpool create -o ashift=12 -d \
-            -o feature@async_destroy=enabled \
-            -o feature@bookmarks=enabled \
-            -o feature@embedded_data=enabled \
-            -o feature@empty_bpobj=enabled \
-            -o feature@enabled_txg=enabled \
-            -o feature@extensible_dataset=enabled \
-            -o feature@filesystem_limits=enabled \
-            -o feature@hole_birth=enabled \
-            -o feature@large_blocks=enabled \
-            -o feature@lz4_compress=enabled \
-            -o feature@spacemap_histogram=enabled \
-            -o feature@userobj_accounting=enabled \
-            -o feature@zpool_checkpoint=enabled \
-            -o feature@spacemap_v2=enabled \
-            -o feature@project_quota=enabled \
-            -o feature@resilver_defer=enabled \
-            -o feature@allocation_classes=enabled \
-            -O acltype=posixacl -O canmount=off -O compression=lz4 -O devices=off \
-            -O normalization=formD -O relatime=on -O xattr=sa \
-            -O mountpoint=/ -R /mnt -f \
-            ${BOOT_POOL_NAME} $BOOT_PART
-    else
-        zpool create -o ashift=12 -d \
-            -o feature@async_destroy=enabled \
-            -o feature@bookmarks=enabled \
-            -o feature@embedded_data=enabled \
-            -o feature@empty_bpobj=enabled \
-            -o feature@enabled_txg=enabled \
-            -o feature@extensible_dataset=enabled \
-            -o feature@filesystem_limits=enabled \
-            -o feature@hole_birth=enabled \
-            -o feature@large_blocks=enabled \
-            -o feature@lz4_compress=enabled \
-            -o feature@spacemap_histogram=enabled \
-            -o feature@userobj_accounting=enabled \
-            -O acltype=posixacl -O canmount=off -O compression=lz4 -O devices=off \
-            -O normalization=formD -O relatime=on -O xattr=sa \
-            -O mountpoint=/ -R /mnt -f \
-            ${BOOT_POOL_NAME} $BOOT_PART
-    fi
+    zpool create -o ashift=12 -d \
+        -o feature@async_destroy=enabled \
+        -o feature@bookmarks=enabled \
+        -o feature@embedded_data=enabled \
+        -o feature@empty_bpobj=enabled \
+        -o feature@enabled_txg=enabled \
+        -o feature@extensible_dataset=enabled \
+        -o feature@filesystem_limits=enabled \
+        -o feature@hole_birth=enabled \
+        -o feature@large_blocks=enabled \
+        -o feature@lz4_compress=enabled \
+        -o feature@spacemap_histogram=enabled \
+        -o feature@userobj_accounting=enabled \
+        -o feature@zpool_checkpoint=enabled \
+        -o feature@spacemap_v2=enabled \
+        -o feature@project_quota=enabled \
+        -o feature@resilver_defer=enabled \
+        -o feature@allocation_classes=enabled \
+        -O acltype=posixacl -O canmount=off -O compression=lz4 -O devices=off \
+        -O normalization=formD -O relatime=on -O xattr=sa \
+        -O mountpoint=/ -R /mnt -f \
+        ${BOOT_POOL_NAME} $BOOT_PART
 
     # 2.4 Create the root pool
     if [ $ENCRYPT == "no" ]; then
-
         # 2.4a Unencrypted
         zpool create -o ashift=12 \
             -O acltype=posixacl -O canmount=off -O compression=lz4 \
@@ -173,28 +133,13 @@ if [ $INSTALL_TYPE != "use_pools" ];then
             -O mountpoint=/ -R /mnt -f \
             ${ROOT_POOL_NAME} $ROOT_PART
     elif [ $ENCRYPT == "yes" ]; then
-        if [[ "$BACKPORTS" == "yes" ]]
-        then
             # native ZFS encryption
-            zpool create -o ashift=12 \
-                -O acltype=posixacl -O canmount=off -O compression=lz4 \
-                -O dnodesize=auto -O normalization=formD -O relatime=on -O xattr=sa \
-                -O encryption=aes-256-gcm -O keylocation=prompt -O keyformat=passphrase \
-                -O mountpoint=/ -R /mnt -f \
-                ${ROOT_POOL_NAME} $ROOT_PART
-        else
-            # 2.4b LUKS:
-            apt install --yes cryptsetup
-            cryptsetup luksFormat -c aes-xts-plain64 -s 512 -h sha256 $ROOT_PART
-            cryptsetup luksOpen $ROOT_PART luks1
-            zpool create -o ashift=12 \
-                -O acltype=posixacl -O canmount=off -O compression=lz4 \
-                -O dnodesize=auto -O normalization=formD -O relatime=on -O xattr=sa \
-                -O mountpoint=/ -R /mnt -f \
-                ${ROOT_POOL_NAME} /dev/mapper/luks1
-            # TODO make 'luks1' an ENV var to manage the situation when there are other
-            # encrypted partitions. Or find the first available (unused) luks device.
-        fi
+        zpool create -o ashift=12 \
+            -O acltype=posixacl -O canmount=off -O compression=lz4 \
+            -O dnodesize=auto -O normalization=formD -O relatime=on -O xattr=sa \
+            -O encryption=aes-256-gcm -O keylocation=prompt -O keyformat=passphrase \
+            -O mountpoint=/ -R /mnt -f \
+            ${ROOT_POOL_NAME} $ROOT_PART
     else
         echo "Set ENCRYPT to \"yes\" or \"no\""
         exit 1
@@ -294,20 +239,18 @@ deb-src http://security.debian.org/debian-security buster/updates main contrib
 
 EOF
 
-# Optional
-if [ "$BACKPORTS" = "yes" ]
-then
-    cat > /mnt/etc/apt/sources.list.d/buster-backports.list <<EOF
-    deb http://deb.debian.org/debian buster-backports main contrib
-    deb-src http://deb.debian.org/debian buster-backports main contrib
+# Add backports to apt sources
+
+cat > /mnt/etc/apt/sources.list.d/buster-backports.list <<EOF
+deb http://deb.debian.org/debian buster-backports main contrib
+deb-src http://deb.debian.org/debian buster-backports main contrib
 EOF
 
-    cat >  /mnt/etc/apt/preferences.d/90_zfs <<EOF
-    Package: libnvpair1linux libuutil1linux libzfs2linux libzpool2linux spl-dkms zfs-dkms zfs-test zfsutils-linux zfsutils-linux-dev zfs-zed
-    Pin: release n=buster-backports
-    Pin-Priority: 990
+cat >  /mnt/etc/apt/preferences.d/90_zfs <<EOF
+Package: libnvpair1linux libuutil1linux libzfs2linux libzpool2linux spl-dkms zfs-dkms zfs-test zfsutils-linux zfsutils-linux-dev zfs-zed
+Pin: release n=buster-backports
+Pin-Priority: 990
 EOF
-fi
 
 
 # 4.4  Bind the virtual filesystems from the LiveCD environment to the new system
@@ -338,19 +281,7 @@ dpkg-reconfigure tzdata
 
 # 4.6 Install ZFS in the chroot environment for the new system
 apt install --yes dpkg-dev linux-headers-amd64 linux-image-amd64
-
-if [ "\$BACKPORTS" = "yes" ]
-then
-    apt install --yes -t buster-backports zfs-initramfs
-else
-    apt install --yes zfs-initramfs
-    # 4.7 For LUKS installs only, setup crypttab:
-    if [ "\$ENCRYPT" = "yes" ]; then
-        apt install --yes cryptsetup
-        echo luks1 UUID=\$(blkid -s UUID -o value  \$ROOT_PART) none \
-            luks,discard,initramfs > /etc/crypttab
-    fi
-fi
+apt install --yes -t buster-backports zfs-initramfs
 
 # 4.7 Install GRUB
 # 4.7b Install GRUB for UEFI booting
