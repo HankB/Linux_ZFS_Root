@@ -6,13 +6,12 @@ Script to facilitate installing Debian Buster on a ZFS root.
 
 Limited testing has been performed with Debian 10.1 Live (Gnome) ISO and no issues cropped up.
 
-As of 2019-09-21 the instructions no longer support the EXPERIMENTAL branch and have been simplified to use backports for all installs. The instructions no longer list LUKS encryption. A release (with very limited testing) has been put out which strill supports non-backports install and LUKS encryption in that situation. The next release will only use backports and native ZFS encryption.
+As of 2019-09-21 the instructions no longer support the EXPERIMENTAL branch and have been simplified to use backports for all installs. The instructions no longer list LUKS encryption. A release (with very limited testing) has been put out which still supports non-backports install and LUKS encryption in that situation. The next release will only use backports and native ZFS encryption. (Commit 7d48393 removes EXPERIMENTAL support but still options BACKPORTS and uses LUKS encryption when BADKPORTS="no".)
 
 ## Inspiration
 
-[Debian Buster Root on ZFS
-](https://github.com/zfsonlinux/zfs/wiki/Debian-Buster-Root-on-ZFS) and [Debian Buster Encrypted Root on ZFS](https://github.com/zfsonlinux/zfs/wiki/Debian-Buster-Encrypted-Root-on-ZFS)as of [2019-08-13](https://github.com/zfsonlinux/zfs/wiki/Debian-Buster-Root-on-ZFS/b0d40117ad36bc882d43adf2201f16fdf7faa08b). The latter is referenced below and in the script as EXPERIMENTAL since it fetches the code directly form the ZFS github repo.
-Any references to "instructions" below refer to the contents of these links.
+[Debian Buster Root on ZFS](https://github.com/zfsonlinux/zfs/wiki/Debian-Buster-Root-on-ZFS)
+Any references to "instructions" below refer to the contents of this links.
 
 ## Roadmap
 
@@ -26,7 +25,7 @@ The need for testing can come from several external sources.
 When the script changes to accommodate either of these, all tests will be repeated.
 
 The next effort will be to bring the script into compliance with the instructrions (eliminating the BACKPORTS and EXPERIMENTAL options. BACKPORTS will be the default and
-EXPERIMENTAL may be eliminated.)
+EXPERIMENTAL has been eliminated.)
 
 The next effort after that will be to revise the test scripts. They have grown in an ad-hoc fashion as testing has been performed on different machines. They can be configured such that the same script will work on all test enviroments (presently Virtualbox VMs.) And each of the 18 test cases will get its own script.
 
@@ -60,8 +59,8 @@ There are other scripts that may suit your needs better than this.
 
 ## Status
 
+* Most recent commit has had mionimal testing (EXPERIMENTAL removed, BACKPORTS next.)
 * Script is current with the intructions listed at https://github.com/zfsonlinux/zfs/wiki/Debian-Buster-Root-on-ZFS (subject to the limitations listed above.) (Note: It is still catching up.)
-* Experimental installation (using 0.8.1-4 from the git repository) has been implemented.
 * A few test cases have passed using Debian Live 10.1 which is now recommended.
 
 ## WARNING WILL ROBINSON
@@ -163,11 +162,6 @@ This option requires that the EFI partition be present as for `INSTALL_TYPE=use_
 export USE_BACKPORTS=yes
 ```
 Use backports as described at https://github.com/zfsonlinux/zfs/wiki/Debian. This will result in newer versions of ZFS to be used. Use with caution. I do not know what happens when a version change (e.g. 0.7.13 -> 0.8.1) happens. At present (2019-08-15) this will result in installation of version 0.7.13 vs. 0.7.12 in stable. In the relatively near future 0.8.x will make it to backports.
-
-```shell
-export EXPERIMENTAL=yes
-```
-This will download and build directly from the github repo for ZFS on Linux. It will break frequently. I do not know how or even if the installation can update based on commits to the repo. At present (2019-08-15) this installs 0.8.1-4.
 
 #### Tips
 
