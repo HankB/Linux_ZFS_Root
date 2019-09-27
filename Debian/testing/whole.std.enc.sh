@@ -14,10 +14,6 @@ export ENCRYPT="yes"
 # Select the type of installation "whole_disk|use_partitions|use_pools"
 export INSTALL_TYPE="whole_disk"
 
-# Select other options Default, presently 0.7.12, BACKPORTS 0.8.1, EXPERIMENTAL 0.8.1
-export EXPERIMENTAL="no"
-export BACKPORTS="no"
-
 # for INSTALL_TYPE="use_partitions", set the following variables
 # Specify the entire path
 # e.g. 'export EFI_PART=/dev/disk/by-id/ata-SATA_SSD_18120612000764-part2'
