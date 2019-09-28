@@ -8,8 +8,9 @@ export ROOT_POOL_NAME="rpool"
 export BOOT_POOL_NAME="bpool"
 
 # LUKS encryption for 0.7 and native encryptoion for 0.8
-export ENCRYPT="yes"
-# export ENCRYPT="no" # must be set
+export ZFS_CRYPT="yes"
+export LUKS_CRYPT="no"
+# export ZFS_CRYPT="no" # must be set
 
 # Select the type of installation "whole_disk|use_partitions|use_pools"
 export INSTALL_TYPE="whole_disk"
