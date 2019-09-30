@@ -36,7 +36,7 @@ export DRIVE_ID="ata-VBOX_HARDDISK_VBfafda65f-8b22812e"
 
 # following works in Virtualbox VMs.
 #export DRIVE_ID=$(cd /dev/disk/by-id || exit 1; ls -- *VBOX_HARDDISK*|head -1)
-DRIVE_ID=$(find /dev/disk/by-id -name "*VBOX_HARDDISK*"|sort|head -1)
+DRIVE_ID=$(cd /dev/disk/by-id || exit 1; find . -name "*VBOX_HARDDISK*"| sed s/^..//|sort|head -1)
 export DRIVE_ID
 
 ##### build the partitions for the test
