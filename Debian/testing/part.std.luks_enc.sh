@@ -41,23 +41,23 @@ export DRIVE_ID
 
 ##### build the partitions for the test
 # clear the drive
-wipefs -a /dev/disk/by-id/"DRIVE_ID" # useful if the drive already had ZFS pools
-sgdisk --zap-all /dev/disk/by-id/"DRIVE_ID"
+wipefs -a /dev/disk/by-id/"$DRIVE_ID" # useful if the drive already had ZFS pools
+sgdisk --zap-all /dev/disk/by-id/"$DRIVE_ID"
 
 # EFI
-sgdisk -n2:1M:+512M -t2:EF00 /dev/disk/by-id/"DRIVE_ID"
-export EFI_PART=/dev/disk/by-id/"DRIVE_ID"-part2
+sgdisk -n2:1M:+512M -t2:EF00 /dev/disk/by-id/"$DRIVE_ID"
+export EFI_PART=/dev/disk/by-id/"$DRIVE_ID"-part2
 apt update
 apt install dosfstools
 mkdosfs -F 32 -s 1 -n EFI "$EFI_PART"
 
 # boot
-sgdisk -n3:0:+1024M -t3:BF01 /dev/disk/by-id/"DRIVE_ID"
-export BOOT_PART=/dev/disk/by-id/"DRIVE_ID"-part3
+sgdisk -n3:0:+1024M -t3:BF01 /dev/disk/by-id/"$DRIVE_ID"
+export BOOT_PART=/dev/disk/by-id/"$DRIVE_ID"-part3
 
 # root
-sgdisk -n4:0:0 -t4:BF01 /dev/disk/by-id/"DRIVE_ID"
-export ROOT_PART=/dev/disk/by-id/"DRIVE_ID"-part4
+sgdisk -n4:0:0 -t4:BF01 /dev/disk/by-id/"$DRIVE_ID"
+export ROOT_PART=/dev/disk/by-id/"$DRIVE_ID"-part4
 #####
 
 
