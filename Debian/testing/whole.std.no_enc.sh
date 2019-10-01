@@ -1,5 +1,10 @@
-# source this script to set these variables in the user environment
+#!/bin/bash
+# previous line here only to tell shellcheck what shell we're using
+
+# `install_Debian_to_ZFS_root.sh` can source this script to set 
+# these variables to determine how the install is to proceed.
 # adjust to your needs
+
 set -u  # treat unset vars as errors
 export ETHERNET="enp0s3"
 export NEW_HOSTNAME="vbx01"
@@ -30,7 +35,8 @@ export BOOT_PART=
 export DRIVE_ID="ata-VBOX_HARDDISK_VBfafda65f-8b22812e"
 
 # following works in Virtualbox VMs.
-export DRIVE_ID=`(cd /dev/disk/by-id; ls *VBOX_HARDDISK*|head -1)`
+DRIVE_ID=$(cd /dev/disk/by-id || exit 1; find . -name "*VBOX_HARDDISK*"| sed s/^..//|sort|head -1)
+export DRIVE_ID
 
 
 # for INSTALL_TYPE=use_pools, set the following variable
@@ -43,4 +49,4 @@ export EFI_PART=
 
 # LOCAL SETTINGS - may not otherwise be useful
 # Use Apt-Cacher NG to reduce load on Debian repo servers
-export http_proxy=http://oak:3142
+export http_proxy="http://oak:3142"
