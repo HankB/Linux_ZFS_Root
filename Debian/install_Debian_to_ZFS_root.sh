@@ -305,8 +305,6 @@ dpkg-reconfigure tzdata
 # 4.6 Install ZFS in the chroot environment for the new system
 apt install --yes curl dpkg-dev linux-headers-amd64 linux-image-amd64
 apt install --yes zfs-initramfs
-curl https://github.com/zfsonlinux/zfs/commit/f335b8f.patch | \
-  patch /usr/share/initramfs-tools/scripts/zfs
 
 # 4.7 For LUKS installs only, setup crypttab:
 if [ "\$LUKS_CRYPT" == "yes" ]; then
