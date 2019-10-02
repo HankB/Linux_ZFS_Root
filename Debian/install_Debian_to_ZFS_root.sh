@@ -24,10 +24,15 @@ fi
 
 # Verify consistency of ENV vars
 
-# Make sure $ENCRYPT is set to something, default to 'no'
-if [ -z ${ENCRYPT+x} ]
+# Make sure $ZFS_CRYPT is set to something, default to 'no'
+if [ -z ${ZFS_CRYPT+x} ]
 then
-    export ENCRYPT="no"
+    export ZFS_CRYPT="no"
+fi
+
+if [ -z ${LUKS_CRYPT+x} ]
+then
+    export LUKS_CRYPT="no"
 fi
 
 # 1.4 Add contrib archive area
@@ -53,8 +58,8 @@ deb-src http://deb.debian.org/debian buster-backports main contrib
 EOF
 
 cat >  /etc/apt/preferences.d/90_zfs <<EOF
-Package: libnvpair1linux libuutil1linux libzfs2linux libzpool2linux spl-dkms zfs-dkms \
-         zfs-test zfsutils-linux zfsutils-linux-dev zfs-zed
+Package: libnvpair1linux libuutil1linux libzfs2linux libzpool2linux zfs-dkms \
+         zfs-initramfs zfs-test zfsutils-linux zfsutils-linux-dev zfs-zed
 Pin: release n=buster-backports
 Pin-Priority: 990
 EOF
@@ -62,7 +67,7 @@ EOF
 apt update
 
 # 1.5 Install ZFS in the Live CD environment
-apt install --yes debootstrap gdisk dpkg-dev linux-headers-"$(uname -r)"
+apt install --yes debootstrap gdisk dkms dpkg-dev linux-headers-"$(uname -r)"
 apt install --yes -t buster-backports zfs-dkms
 modprobe zfs
 
@@ -70,6 +75,10 @@ modprobe zfs
 
 if [ "$INSTALL_TYPE" == "whole_disk" ];then
     # 2.1 If you are re-using a disk, clear it as necessary
+    # If the disk was previously used in an MD array, zero the superblock:
+    apt install --yes mdadm
+    mdadm --zero-superblock --force /dev/disk/by-id/"$DRIVE_ID"
+
     wipefs -a /dev/disk/by-id/"$DRIVE_ID"   # useful if the drive already had ZFS pools
     sgdisk --zap-all /dev/disk/by-id/"$DRIVE_ID"
 
@@ -82,12 +91,16 @@ if [ "$INSTALL_TYPE" == "whole_disk" ];then
     sgdisk     -n3:0:+1024M    -t3:BF01 /dev/disk/by-id/"$DRIVE_ID"
     export BOOT_PART=/dev/disk/by-id/"$DRIVE_ID"-part3
 
-    # 2.2a main pool 
-    sgdisk     -n4:0:0      -t4:BF01 /dev/disk/by-id/"$DRIVE_ID"
+    # 2.2 main pool 
+    if [ "$LUKS_CRYPT" == "no" ]; then
+        sgdisk     -n4:0:0      -t4:BF01 /dev/disk/by-id/"$DRIVE_ID"
+    else
+        sgdisk     -n4:0:0      -t4:8300 /dev/disk/by-id/"$DRIVE_ID"
+    fi
 
     export ROOT_PART=/dev/disk/by-id/${DRIVE_ID}-part4
     partprobe  /dev/disk/by-id/"$DRIVE_ID"
-    sleep 3 # avoid '$BOOT_PART': No such file or directory 
+    sleep 3 # avoid '$BOOT_PART': No such file or directory - Virtualbox artifact?
 elif [ "$INSTALL_TYPE" == "use_partitions" ];then
     echo "using $ROOT_PART for root partition"
     echo "using $BOOT_PART for boot partition"
@@ -130,15 +143,18 @@ if [ "$INSTALL_TYPE" != "use_pools" ];then
         "${BOOT_POOL_NAME}" "$BOOT_PART"
 
     # 2.4 Create the root pool
-    if [ "$ENCRYPT" == "no" ]; then
-        # 2.4a Unencrypted
+    if [ "$LUKS_CRYPT" == yes ]; then
+        # 2.4b LUKS encryption
+        apt install --yes cryptsetup
+        cryptsetup luksFormat -c aes-xts-plain64 -s 512 -h sha256 "$ROOT_PART"
+        cryptsetup luksOpen "$ROOT_PART" luks1
         zpool create -o ashift=12 \
             -O acltype=posixacl -O canmount=off -O compression=lz4 \
             -O dnodesize=auto -O normalization=formD -O relatime=on -O xattr=sa \
-            -O mountpoint=/ -R /mnt -f \
-            "${ROOT_POOL_NAME}" "$ROOT_PART"
-    elif [ "$ENCRYPT" == "yes" ]; then
-        # 2.4b Encrypted
+            -O mountpoint=/ -R /mnt \
+            "${ROOT_POOL_NAME}" /dev/mapper/luks1
+    elif [ "$ZFS_CRYPT" == "yes" ]; then
+        # 2.4c  ZFS native encryption
         zpool create -o ashift=12 \
             -O acltype=posixacl -O canmount=off -O compression=lz4 \
             -O dnodesize=auto -O normalization=formD -O relatime=on -O xattr=sa \
@@ -146,8 +162,12 @@ if [ "$INSTALL_TYPE" != "use_pools" ];then
             -O mountpoint=/ -R /mnt -f \
             "${ROOT_POOL_NAME}" "$ROOT_PART"
     else
-        echo "Set ENCRYPT to \"yes\" or \"no\""
-        exit 1
+        # 2.4a Unencrypted
+        zpool create -o ashift=12 \
+            -O acltype=posixacl -O canmount=off -O compression=lz4 \
+            -O dnodesize=auto -O normalization=formD -O relatime=on -O xattr=sa \
+            -O mountpoint=/ -R /mnt -f \
+            "${ROOT_POOL_NAME}" "$ROOT_PART"
     fi
 fi
 
@@ -223,14 +243,12 @@ echo "127.0.1.1       $NEW_HOSTNAME" >> /mnt/etc/hosts
 
 # 4.2 Configure the network interface:
 # Find the interface name:
-ip addr show
+# ip addr show
 
 cat >/mnt/etc/network/interfaces.d/"${ETHERNET}" <<EOF
 auto ${ETHERNET}
 iface ${ETHERNET} inet dhcp
 EOF
-
-cat /mnt/etc/network/interfaces.d/"${ETHERNET}"
 
 # 4.3  Configure the package sources:
 # Add `contrib` archive area:
@@ -251,8 +269,8 @@ deb-src http://deb.debian.org/debian buster-backports main contrib
 EOF
 
 cat >  /mnt/etc/apt/preferences.d/90_zfs <<EOF
-Package: libnvpair1linux libuutil1linux libzfs2linux libzpool2linux spl-dkms zfs-dkms \
-         zfs-test zfsutils-linux zfsutils-linux-dev zfs-zed
+Package: libnvpair1linux libuutil1linux libzfs2linux libzpool2linux zfs-dkms \
+         zfs-initramfs zfs-test zfsutils-linux zfsutils-linux-dev zfs-zed         
 Pin: release n=buster-backports
 Pin-Priority: 990
 EOF
@@ -285,10 +303,21 @@ dpkg-reconfigure locales
 dpkg-reconfigure tzdata
 
 # 4.6 Install ZFS in the chroot environment for the new system
-apt install --yes dpkg-dev linux-headers-amd64 linux-image-amd64
-apt install --yes -t buster-backports zfs-initramfs
+apt install --yes curl dpkg-dev linux-headers-amd64 linux-image-amd64
+apt install --yes zfs-initramfs
+curl https://github.com/zfsonlinux/zfs/commit/f335b8f.patch | \
+  patch /usr/share/initramfs-tools/scripts/zfs
 
-# 4.7 Install GRUB
+# 4.7 For LUKS installs only, setup crypttab:
+if [ "\$LUKS_CRYPT" == "yes" ]; then
+    apt install --yes cryptsetup
+    echo luks1 UUID=\$(blkid -s UUID -o value \
+        "\$ROOT_PART") none \
+        luks,discard,initramfs > /etc/crypttab
+fi
+
+
+# 4.8 Install GRUB
 # 4.7b Install GRUB for UEFI booting
 if [ "\$INSTALL_TYPE" == "whole_disk" ];then
     apt install dosfstools
@@ -300,12 +329,11 @@ echo \${EFI_PART} \
 mount /boot/efi
 apt install --yes grub-efi-amd64 shim-signed
 
-# 4.8 Set a root password
+# 4.9 Set a root password
 echo "set a root password"
 set +e
 while ! passwd 
 do
-	echo $?
 	echo try again
 done
 set -e
@@ -382,6 +410,8 @@ ln -s /usr/lib/zfs-linux/zed.d/history_event-zfs-list-cacher.sh /etc/zfs/zed.d
 zed -F &
 ZED_PID=\$!
 
+
+# loop while zed does its thing
 while ! ( [ -f /etc/zfs/zfs-list.cache/"\${ROOT_POOL_NAME}" ] && \
           [ -s /etc/zfs/zfs-list.cache/"\${ROOT_POOL_NAME}" ] )
 do
@@ -390,6 +420,8 @@ do
     zfs set canmount=noauto "\${ROOT_POOL_NAME}"/ROOT/debian
 done
 
+# delay one more time to avoid race condition
+sleep 3
 kill \$ZED_PID
 
 # Fix the paths to eliminate /mnt:
