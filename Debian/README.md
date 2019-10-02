@@ -4,11 +4,11 @@ Script to facilitate installing Debian Buster on a ZFS root.
 
 # Note
 
-Limited testing has been performed with Debian 10.1 Live (Gnome) ISO and no issues cropped up.
+Debian 10.1 Live Gnome is recommended.
 
-Limited testing performed on this commit. (One test case passed - Ship it!) The instructions I'm woprking from changed to add LUKS encryption back so the script will be modified accordingly. As soon as the script catches up with the instructions, more thorough testing will be performed. In the mean time, this README may not be current WRT the code.
+This commit has been fairly thoroughly tested including on real H/W. During the last planned test, ZFS 0.8.2 was released to Buster backports and broke the script. The patch will be removed form the script and testing repeated.
 
-As of 2019-09-21 the instructions no longer support the EXPERIMENTAL branch and have been simplified to use backports for all installs. The instructions no longer list LUKS encryption. A release (with very limited testing) has been put out which still supports non-backports install and LUKS encryption in that situation. The next release will only use backports and native ZFS encryption. (Commit 7d48393 removes EXPERIMENTAL support but still options BACKPORTS and uses LUKS encryption when BACKPORTS="no".)
+As of 2019-09-21 the instructions no longer support the EXPERIMENTAL branch and have been simplified to use backports for all installs. LUKS encryption was removed and has been restored.
 
 ## Inspiration
 
@@ -61,10 +61,12 @@ There are other scripts that may suit your needs better than this.
 
 ## Status
 
-* Most recent commit has had minimal testing (EXPERIMENTAL removed, BACKPORTS next.)
-* Script has been checked with shellcheck and all reported issues resolved.
-* Script is current with the intructions listed at https://github.com/zfsonlinux/zfs/wiki/Debian-Buster-Root-on-ZFS (subject to the limitations listed above.) (Note: It is still catching up.)
-* A few test cases have passed using Debian Live 10.1 which is now recommended.
+* Script has been checked with `shellcheck` and all reported issues resolved.
+* Script is current with the intructions listed at https://github.com/zfsonlinux/zfs/wiki/Debian-Buster-Root-on-ZFS (Note: The release of 0.8.2 breaks the instructions and script.)
+* All test cases have passed using Debian Live 10.1 which is now recommended. Many tests do not perform well on Virtualbox, resulting in no rpool pool on reboot. Repeating the identical test often succeeds. Fiddling with rpool before booting sometimes helps. This has not been seen on real H/W.
+* Testing scripts have been revised and all pass `shellcheck`.
+* Script has been broken due to release of ZFS 0.8.2 to backports. The fix is simple and testing will commence shortly.
+
 
 ## WARNING WILL ROBINSON
 
