@@ -36,10 +36,12 @@ There are times when the reboot goes to an EFI menu rather than the GRUB menu. I
 ## Files
 
 This directory contains the settings files I have used for the various tests. They also may need to be tailored for the drive ID.
+Files for previous versions of the script which are no longar applicable (but may be otherwise interesting) are in `.../obsolete`.
 
 ## Recording test results
 
 At present I have a [Google Sheet](https://docs.google.com/spreadsheets/d/1aqDocC9FZhQqJpilyDI7LxOcShHNU8znhwk0IFEm-gQ/edit?usp=sharing) with a grid for possible combinations. My intent is to add a sheet for any commit that requires testing. (At present the grid does not include any testing for dual boot systems.)
+With the most recent update, a new sheet has been created. (https://docs.google.com/spreadsheets/d/1F_enjjrheYRwfxnIVbyzsWkdxQesY6dfqt8ElmtgOL8/edit?usp=sharing)
 
 I have also entered an issue for testing and tagged it as "help wanted." I have recorded the first batch of tests but that does not seem like a good long term plan.
 
