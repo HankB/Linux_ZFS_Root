@@ -4,6 +4,8 @@ Script to facilitate installing Debian Buster on a ZFS root.
 
 # Note
 
+Please see warnings.
+
 Debian 10.1 Live Gnome is recommended.
 
 This commit has been fairly thoroughly tested including on real H/W. During the last planned test, ZFS 0.8.2 was released to Buster backports and broke the script. The patch will be removed form the script and testing repeated.
@@ -69,6 +71,8 @@ There are other scripts that may suit your needs better than this.
 
 
 ## WARNING WILL ROBINSON
+
+It may seem like a sensible thing to do to try to install to a drive from a normal system (as opposed to from a live boot environment.) It is not and it may make your existing system unbootable. (Second opportunity to roll back `bpool` and `rpool` today.)
 
 **If something goes wrong this script *will* destroy any data on any target system drive.** I captured a full disk image backup before testing this on any of my systems. Taking a full image backup takes less time than reinstalling Windows should that be needed.
 
