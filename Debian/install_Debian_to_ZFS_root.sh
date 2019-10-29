@@ -305,8 +305,6 @@ dpkg-reconfigure tzdata
 # 4.6 Install ZFS in the chroot environment for the new system
 apt install --yes curl dpkg-dev linux-headers-amd64 linux-image-amd64
 apt install --yes zfs-initramfs
-curl https://github.com/zfsonlinux/zfs/commit/f335b8f.patch | \
-  patch /usr/share/initramfs-tools/scripts/zfs
 
 # 4.7 For LUKS installs only, setup crypttab:
 if [ "\$LUKS_CRYPT" == "yes" ]; then
@@ -440,6 +438,17 @@ chroot /mnt /usr/local/sbin/chroot_commands.sh
 # 6.3 Run these commands in the LiveCD environment to unmount all filesystems
 mount | grep -v zfs | tac | awk '/\/mnt/ {print $3}' | xargs -i{} umount -lf {}
 zpool export -a
+
+# fixup for root pool not found following reboot =============
+if ! zpool import -N "$ROOT_POOL_NAME" 
+then
+    zpool import -N -d "$ROOT_PART" "$ROOT_POOL_NAME" 
+    echo "root pool fixup applied"
+fi
+
+zpool export "$ROOT_POOL_NAME"
+# =============
+
 
 # 6.4 Reboot
 echo reboot now

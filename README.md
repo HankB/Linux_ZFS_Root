@@ -10,4 +10,4 @@ Ubuntu branch is virtually abandoned. Canonical is pursuing support of ZFS on ro
 
 ### Debian
 
-Debian is under active development. The script has been updated to support Buster and with backports. (Backports provide 0.7.13 while the regular repos include 0.7.12.) Work is complete but not fully tested on including 0.8.1 directly from the ZoL Github repo.
+Debian is under active development. The script has been updated to support Buster and use backports. At present it only supports ZFS from backports. (Backports provide 0.8.2 while the regular repos include 0.7.12.) Work is complete but not fully tested.

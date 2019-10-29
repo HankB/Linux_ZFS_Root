@@ -12,10 +12,10 @@ My procedure is as follows.
 
 * ticking the "Enable EFI (special OSes only)" box in Settings -> System -> Motherboard
 * mounting the Live ISO on the SATA bus in Settings -> Storage. (Linux is a special OS! ;) )
-* Configure Networking - Settings -> Network -> Attached to: Bridged Adapter. (Allows the host to connect with the guest.)
+* Configure Networking - Settings -> Network -> Attached to: Bridged Adapter. (Allows the host to connect with the guest.) (Fairly early on I switched to using NAT for the network connection and initiating file transfers from the guest)
 
-2) Boot from the ISO and confirm that the system booted in EFI mode. Check for existence of `/sys/firmware/efi'. (Shutdown the VM and clone from it for all subsequent tests.)
-0) Clone the VM and boot. Once in the live environment, install and start `openssh-server`.
+2) Boot from the ISO and confirm that the system booted in EFI mode. Check for existence of `/sys/firmware/efi`. (Shutdown the VM and clone from it for all subsequent tests.)
+0) Once in the live environment, install and start `openssh-server`. (Not needed when initiating the connection from the guest.)
 
 ```shell
 sudo -s
