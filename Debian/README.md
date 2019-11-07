@@ -56,6 +56,7 @@ There are other scripts that may suit your needs better than this.
 
 * https://github.com/hn/debian-stretch-zfs-root
 * https://github.com/hn/debian-buster-zfs-root
+* https://github.com/saveriomiroddi/zfs-installer
 
 ## Status
 
