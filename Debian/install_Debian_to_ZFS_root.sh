@@ -35,41 +35,18 @@ then
     export LUKS_CRYPT="no"
 fi
 
-# 1.4 Add contrib archive area
-if [ -e /etc/apt/sources.list ] 
-then
-    echo deb http://deb.debian.org/debian buster contrib >> /etc/apt/sources.list
-else
-    if [ -d /etc/apt/sources.list.d ]
-    then
-        echo "deb http://deb.debian.org/debian buster main contrib" > \
-            /etc/apt/sources.list.d/contrib.list
-    else
-        echo "can't find sources file"
-        exit 1
-    fi
-fi
+# 1.4 Setup and update the repositories:
 
-# Add backports to apt sources.
-
-cat > /etc/apt/sources.list.d/buster-backports.list <<EOF
-deb http://deb.debian.org/debian buster-backports main contrib
-deb-src http://deb.debian.org/debian buster-backports main contrib
-EOF
-
-cat >  /etc/apt/preferences.d/90_zfs <<EOF
-Package: libnvpair1linux libuutil1linux libzfs2linux libzpool2linux zfs-dkms \
-         zfs-initramfs zfs-test zfsutils-linux zfsutils-linux-dev zfs-zed
-Pin: release n=buster-backports
-Pin-Priority: 990
-EOF
+echo deb http://deb.debian.org/debian buster contrib >> /etc/apt/sources.list
+echo deb http://deb.debian.org/debian buster-backports main contrib >> /etc/apt/sources.list
 
 apt update
 
 # 1.5 Install ZFS in the Live CD environment
 apt install --yes debootstrap gdisk dkms dpkg-dev linux-headers-"$(uname -r)"
-apt install --yes -t buster-backports zfs-dkms
+apt install --yes -t buster-backports --no-install-recommends zfs-dkms
 modprobe zfs
+apt install --yes -t buster-backports zfsutils-linux
 
 # 2 Disk Formatting
 
@@ -303,7 +280,7 @@ dpkg-reconfigure locales
 dpkg-reconfigure tzdata
 
 # 4.6 Install ZFS in the chroot environment for the new system
-apt install --yes curl dpkg-dev linux-headers-amd64 linux-image-amd64
+apt install --yes dpkg-dev linux-headers-amd64 linux-image-amd64
 apt install --yes zfs-initramfs
 
 # 4.7 For LUKS installs only, setup crypttab:
