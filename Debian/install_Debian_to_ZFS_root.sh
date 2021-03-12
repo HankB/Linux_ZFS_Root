@@ -96,7 +96,9 @@ fi
 
 if [ "$INSTALL_TYPE" != "use_pools" ];then 
     # 2.3 Create the boot pool
-    zpool create -o ashift=12 -d \
+    zpool create 
+        -o cachefile=/etc/xfs/zpool.cache \
+        -o ashift=12 -d \
         -o feature@async_destroy=enabled \
         -o feature@bookmarks=enabled \
         -o feature@embedded_data=enabled \
@@ -108,7 +110,6 @@ if [ "$INSTALL_TYPE" != "use_pools" ];then
         -o feature@large_blocks=enabled \
         -o feature@lz4_compress=enabled \
         -o feature@spacemap_histogram=enabled \
-        -o feature@userobj_accounting=enabled \
         -o feature@zpool_checkpoint=enabled \
         -o feature@spacemap_v2=enabled \
         -o feature@project_quota=enabled \
@@ -116,7 +117,7 @@ if [ "$INSTALL_TYPE" != "use_pools" ];then
         -o feature@allocation_classes=enabled \
         -O acltype=posixacl -O canmount=off -O compression=lz4 -O devices=off \
         -O normalization=formD -O relatime=on -O xattr=sa \
-        -O mountpoint=/ -R /mnt -f \
+        -O mountpoint=/boot -R /mnt -f \
         "${BOOT_POOL_NAME}" "$BOOT_PART"
 
     # 2.4 Create the root pool
