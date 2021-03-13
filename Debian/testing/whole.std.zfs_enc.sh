@@ -48,6 +48,3 @@ export EFI_PART=
 # export ENCRYPT="yes|no"
 
 # LOCAL SETTINGS - may not otherwise be useful
-# Use Apt-Cacher NG to reduce load on Debian repo servers
-export "http_proxy=http://oak:3142"
-

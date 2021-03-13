@@ -144,5 +144,3 @@ sleep 3 # avoid '$BOOT_PART': No such file or directory - Virtualbox artifact?
 # export ENCRYPT="yes|no"
 
 # LOCAL SETTINGS - may not otherwise be useful
-# Use Apt-Cacher NG to reduce load on Debian repo servers
-export "http_proxy=http://oak:3142"
