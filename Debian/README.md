@@ -60,6 +60,13 @@ There are other scripts that may suit your needs better than this.
 
 ## Status
 
+At present (2021-03-12) Status is not current. Work is in progress to 
+
+1. Update to current instructions.
+1. Add support to install using BIOS/MBR boot (It turns out that my servers are ancient but still workable and do not support UEFI boot.)
+
+Some cursory testing has been performed on a VM. No testing yet on real metal.
+
 * Script has been checked with `shellcheck` and all reported issues resolved.
 * Script is current with the intructions listed at https://github.com/zfsonlinux/zfs/wiki/Debian-Buster-Root-on-ZFS except for the `sources.list` additions.
 * All test cases have passed using Debian Live 10.1. (see Errata)
@@ -129,4 +136,5 @@ I have submitted issues for things that I anticipate as possible next steps. If 
 
 ## Errata
 
-Many tests do not perform well resulting in a no rpool condition on reboot. Repeating the identical test often succeeded. Fiddling with rpool before booting sometimes helps. This has been seen on real H/W as well. A fixup was added at the end of the script which will report `root pool fixup applied` if needed and otherwise simply import and then export the pool. During testing the fixup was never seen. Final version during testing was 0.8.2-2~bpo10+1 and perhaps a fix was issued for this. ZFS versiojn will be tracked more closely during subsequent testing.
+1. Many tests do not perform well resulting in a no rpool condition on reboot. Repeating the identical test often succeeded. Fiddling with rpool before booting sometimes helps. This has been seen on real H/W as well. A fixup was added at the end of the script which will report `root pool fixup applied` if needed and otherwise simply import and then export the pool. During testing the fixup was never seen. Final version during testing was 0.8.2-2~bpo10+1 and perhaps a fix was issued for this. ZFS version will be tracked more closely during subsequent testing.
+1. When installing to preconfigured partitions and when using UEFI boot, it is assumed that the EFI partition exists and for that reason it will noe be formatted by the script. This is done this way to support dual boot. For this reason if you create an empty EFI partition, it must be formatted before running the script or the script will fail.
