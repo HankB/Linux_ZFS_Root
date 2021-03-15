@@ -9,7 +9,7 @@ set -euo pipefail
 # set -e            # exit on error
 # set -u            # treat unset variables as errors
 # set -o pipefail   # check exit status of all commands in pipeline
-set -x            # expand commands - for debugging
+set -x            # expand commands - for debugging (temporary)
 
 if [ "$#"  == 0 ]; then
     echo 'using default ENV vars (env.sh)'
@@ -403,8 +403,12 @@ touch /etc/zfs/zfs-list.cache/"\${ROOT_POOL_NAME}"
 touch /etc/zfs/zfs-list.cache/"\${BOOT_POOL_NAME}"
 # ln -s /usr/lib/zfs-linux/zed.d/history_event-zfs-list-cacher.sh /etc/zfs/zed.d
 
-## zed -F &
-## ZED_PID=\$!
+## This next section has been a little problematic. For now, just do a 'best effort'
+## Getting `zed` to populate the cache files. Start it, delay 30 seconds and kill it.
+zed -F &
+ZED_PID=\$!
+echo delay 30 seconds
+sleep 30
 ## 
 ## 
 ## # loop while zed does its thing root pool first
@@ -427,10 +431,11 @@ touch /etc/zfs/zfs-list.cache/"\${BOOT_POOL_NAME}"
 ## 
 ## # delay one more time to avoid apparent race condition
 ## sleep 3
-## kill \$ZED_PID
+kill \$ZED_PID
+ls -l  /etc/zfs/zfs-list.cache/"\${BOOT_POOL_NAME}" /etc/zfs/zfs-list.cache/"\${ROOT_POOL_NAME}" 
 ## 
-## # Fix the paths to eliminate /mnt:
-## sed -Ei "s|/mnt/?|/|" /etc/zfs/zfs-list.cache/*"
+# Fix the paths to eliminate /mnt:
+sed -Ei "s|/mnt/?|/|" /etc/zfs/zfs-list.cache/*"
 
 # 6.1 Snapshot the initial installation
 zfs snapshot "\${ROOT_POOL_NAME}"/ROOT/debian@install
