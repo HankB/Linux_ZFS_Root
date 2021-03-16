@@ -435,7 +435,7 @@ kill \$ZED_PID
 ls -l  /etc/zfs/zfs-list.cache/"\${BOOT_POOL_NAME}" /etc/zfs/zfs-list.cache/"\${ROOT_POOL_NAME}" 
 ## 
 # Fix the paths to eliminate /mnt:
-sed -Ei "s|/mnt/?|/|" /etc/zfs/zfs-list.cache/*"
+sed -Ei "s|/mnt/?|/|" "/etc/zfs/zfs-list.cache/*"
 
 # 6.1 Snapshot the initial installation
 zfs snapshot "\${ROOT_POOL_NAME}"/ROOT/debian@install
