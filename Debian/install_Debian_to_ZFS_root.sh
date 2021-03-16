@@ -35,6 +35,11 @@ then
     export LUKS_CRYPT="no"
 fi
 
+if [ -z ${BOOT_TYPE+x} ]
+then
+    export BOOT_TYPE="UEFI"
+fi
+
 # 1.4 disable automounting
 
 gsettings set org.gnome.desktop.media-handling automount false
@@ -64,6 +69,11 @@ if [ "$INSTALL_TYPE" == "whole_disk" ];then
     sgdisk --zap-all /dev/disk/by-id/"$DRIVE_ID"
 
     # 3 Partition your disk
+    # Run this if you need legacy (BIOS) booting:
+    if [ "$BOOT_TYPE" == "BIOS" ]; then
+        sgdisk -a1 -n1:24K:+1000K -t1:EF02 /dev/disk/by-id/"$DRIVE_ID"
+    fi
+
     # Run this for UEFI booting (for use now or in the future):
     sgdisk     -n2:1M:+512M -t2:EF00 /dev/disk/by-id/"$DRIVE_ID"
     export EFI_PART=/dev/disk/by-id/"$DRIVE_ID"-part2
@@ -310,16 +320,22 @@ fi
 
 
 # 4.8 Install GRUB
-# 4.7b Install GRUB for UEFI booting
+# Format the EFI partition, regardless
 if [ "\$INSTALL_TYPE" == "whole_disk" ];then
     apt install dosfstools
     mkdosfs -F 32 -s 1 -n EFI \${EFI_PART}
 fi
-mkdir /boot/efi
-echo \${EFI_PART} \
-      /boot/efi vfat nofail,x-systemd.device-timeout=1 0 1 >> /etc/fstab
-mount /boot/efi
-apt install --yes grub-efi-amd64 shim-signed
+if [ "\$BOOT_TYPE" == "BIOS" ]; then
+    # Install GRUB for legacy (BIOS) booting:
+    apt install --yes grub-pc
+elif
+    # Install GRUB for UEFI booting
+    mkdir /boot/efi
+    echo \${EFI_PART} \
+        /boot/efi vfat nofail,x-systemd.device-timeout=1 0 1 >> /etc/fstab
+    mount /boot/efi
+    apt install --yes grub-efi-amd64 shim-signed
+fi
 
 # 4.9 Set a root password
 echo "set a root password"
@@ -379,17 +395,23 @@ sed -i "s/#GRUB_TERMINAL/GRUB_TERMINAL/" /etc/default/grub
 update-grub
 
 # 5.6 Install the boot loader
-# 5.6b For UEFI booting, install GRUB
-grub-install --target=x86_64-efi --efi-directory=/boot/efi \
-      --bootloader-id=debian --recheck --no-floppy
+if [ "\$BOOT_TYPE" == "BIOS" ]; then
+    grub-install /dev/disk/by-id/"\$DRIVE_ID"
+elif
+    # 5.6b For UEFI booting, install GRUB
+    grub-install --target=x86_64-efi --efi-directory=/boot/efi \
+        --bootloader-id=debian --recheck --no-floppy
+fi
 
 # 5.7 Verify that the ZFS module is installed
-ls /boot/grub/*/zfs.mod
+# no longer used? ls /boot/grub/*/zfs.mod
 
 # 5.8 Fix filesystem mount ordering
 
 # For UEFI booting, unmount /boot/efi first:
-umount /boot/efi
+if [ "\$BOOT_TYPE" != "BIOS" ]; then
+    umount /boot/efi
+fi
 
 # Everything else applies to both BIOS and UEFI booting:
 
