@@ -261,6 +261,9 @@ deb-src http://deb.debian.org/debian buster main contrib
 
 deb http://security.debian.org/debian-security buster/updates main contrib
 deb-src http://security.debian.org/debian-security buster/updates main contrib
+
+deb http://deb.debian.org/debian buster-updates main contrib
+deb-src http://deb.debian.org/debian buster-updates main contrib
 EOF
 
 # Add backports to apt sources
@@ -271,9 +274,9 @@ deb-src http://deb.debian.org/debian buster-backports main contrib
 EOF
 
 cat >  /mnt/etc/apt/preferences.d/90_zfs <<EOF
-Package: libnvpair1linux libuutil1linux libzfs2linux libzfs2linux-dev \
+Package: libnvpair1linux libuutil1linux libzfs2linux libzfslinux-dev \
          libzpool2linux python3-pyzfs pyzfs-doc spl spl-dkms zfs-dkms \
-         zfs-dracut zfs-initramfs zfs-test zfsutils-linux zfsutils-linux-dev zfs-zed         
+         zfs-dracut zfs-initramfs zfs-test zfsutils-linux zfsutils-linux-dev zfs-zed
 Pin: release n=buster-backports
 Pin-Priority: 990
 EOF
@@ -285,9 +288,8 @@ EOF
 mount --rbind /dev  /mnt/dev
 mount --rbind /proc /mnt/proc
 mount --rbind /sys  /mnt/sys
-mount -t tmpfs tmpfs /mnt/run
 
-#chroot /mnt /bin/bash --login
+#chroot /mnt /usr/bin/env DISK=$DISK bash --login
 
 # Build a script to run in the chroot enbvironment
 cat <<END_OF_CHROOT >/mnt/usr/local/sbin/chroot_commands.sh
@@ -328,7 +330,7 @@ fi
 if [ "\$BOOT_TYPE" == "BIOS" ]; then
     # Install GRUB for legacy (BIOS) booting:
     apt install --yes grub-pc
-elif
+else
     # Install GRUB for UEFI booting
     mkdir /boot/efi
     echo \${EFI_PART} \
@@ -357,9 +359,9 @@ Before=zfs-import-cache.service
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=/sbin/zpool import -N -o cachefile=none "\${BOOT_POOL_NAME}"
-# Work-around to prese5rve zpool cache
-ExecStartPre=~/bin/mv /etc/zfs/zpool.cache /etc/zfs/preboot_zpool.cache
-ExecStartPost=~/bin/mv /etc/zfs/preboot_zpool.cache /etc/zfs/zpool.cache
+# Work-around to preserve zpool cache:
+ExecStartPre=-/bin/mv /etc/zfs/zpool.cache /etc/zfs/preboot_zpool.cache
+ExecStartPost=-/bin/mv /etc/zfs/preboot_zpool.cache /etc/zfs/zpool.cache
 
 [Install]
 WantedBy=zfs-import.target
@@ -381,7 +383,7 @@ if ! [ \`grub-probe /boot\` == "zfs" ];then
 fi
 
 # 5.2 Refresh the initrd files
-update-initramfs -u -k all
+update-initramfs -c -k all
 
 # 5.3 Workaround GRUB's missing zpool-features support:
 sed -i "s|^GRUB_CMDLINE_LINUX=\"|GRUB_CMDLINE_LINUX=\"root=ZFS=\${ROOT_POOL_NAME}/ROOT/debian |" \
@@ -397,28 +399,27 @@ update-grub
 # 5.6 Install the boot loader
 if [ "\$BOOT_TYPE" == "BIOS" ]; then
     grub-install /dev/disk/by-id/"\$DRIVE_ID"
-elif
+else
     # 5.6b For UEFI booting, install GRUB
     grub-install --target=x86_64-efi --efi-directory=/boot/efi \
         --bootloader-id=debian --recheck --no-floppy
 fi
 
-# 5.7 Verify that the ZFS module is installed
+# 5.x Verify that the ZFS module is installed
 # no longer used? ls /boot/grub/*/zfs.mod
 
-# 5.8 Fix filesystem mount ordering
+# 5.7 Fix filesystem mount ordering
 
 # For UEFI booting, unmount /boot/efi first:
-if [ "\$BOOT_TYPE" != "BIOS" ]; then
-    umount /boot/efi
-fi
-
+# if [ "\$BOOT_TYPE" == "UEFI" ]; then
+#     umount /boot/efi
+# fi
 # Everything else applies to both BIOS and UEFI booting:
 
 
-zfs set mountpoint=legacy "\${BOOT_POOL_NAME}"/BOOT/debian
-echo "\${BOOT_POOL_NAME}"/BOOT/debian /boot zfs \
-    nodev,relatime,x-systemd.requires=zfs-import-${BOOT_POOL_NAME}.service 0 0 >> /etc/fstab
+#  "\${BOOT_POOL_NAME}"/BOOT/debian
+# echo "\${BOOT_POOL_NAME}"/BOOT/debian /boot zfs \
+#     nodev,relatime,x-systemd.requires=zfs-import-${BOOT_POOL_NAME}.service 0 0 >> /etc/fstab
 
 mkdir /etc/zfs/zfs-list.cache
 touch /etc/zfs/zfs-list.cache/"\${ROOT_POOL_NAME}"
@@ -457,7 +458,7 @@ kill \$ZED_PID
 ls -l  /etc/zfs/zfs-list.cache/"\${BOOT_POOL_NAME}" /etc/zfs/zfs-list.cache/"\${ROOT_POOL_NAME}" 
 ## 
 # Fix the paths to eliminate /mnt:
-sed -Ei "s|/mnt/?|/|" "/etc/zfs/zfs-list.cache/*"
+sed -Ei "s|/mnt/?|/|" "/etc/zfs/zfs-list.cache/\${BOOT_POOL_NAME}" "/etc/zfs/zfs-list.cache/\${ROOT_POOL_NAME}" 
 
 # 6.1 Snapshot the initial installation
 zfs snapshot "\${ROOT_POOL_NAME}"/ROOT/debian@install
