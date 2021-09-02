@@ -12,6 +12,10 @@ At present (2021-09-02) Work is in progress to
 
 First: Review and update Debian/README.md
 
+Complete:
+
+* VM test using whole disk, no encryption (`testing/whole.std.no_enc.sh`)
+
 ## Note
 
 Please see warnings.
