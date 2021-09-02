@@ -1,32 +1,39 @@
 # Debian ZFS Root
 
-Script to facilitate installing Debian Buster on a ZFS root.
+Script to facilitate installing Debian Bullseye on a ZFS root.
 
-# Note
+## Status
 
-<<<<<<< HEAD
+At present (2021-09-02) Work is in progress to 
+
+1. Update to current instructions (which have been renumbered)
+1. Install using Debian Bullseye
+1. Clarify which portions of the test ENV scripts configure the test environment vs. which configure the actual installation
+
+First: Review and update Debian/README.md
+
+## Note
+
 Please see warnings.
 
-Debian 10.1 Live Gnome install media is used for all testing and is recommended.
+Debian 11.0 Live Gnome install media is used for all testing and is recommended. (`debian-live-11.0.0-amd64-gnome.iso` from <https://cdimage.debian.org/mirror/cdimage/release/current-live/amd64/iso-hybrid/>)
 
-This commit has been fairly thoroughly tested including on real H/W with the latest release available in backports (0.8.2-2~bpo10+1).
-
-As of 2019-09-21 the instructions no longer support the EXPERIMENTAL branch and have been simplified to use backports for all installs. LUKS encryption was removed and has since been restored.
+Backports are no longer used as Bulklseye and backports on Buster both use 2.0.3-9 as of 2021-09-02.
 
 ## Inspiration
 
-[Debian Buster Root on ZFS](https://github.com/zfsonlinux/zfs/wiki/Debian-Buster-Root-on-ZFS)
-Any references to "instructions" below refer to the contents of this links.
+[Debian Buster Root on ZFS](https://openzfs.github.io/openzfs-docs/Getting%20Started/Debian/Debian%20Buster%20Root%20on%20ZFS.html)
+Any references to "instructions" below refer to the contents of this link.
 
 ## Roadmap
 
-The intent of this script is to automate the instructions linked above. Alternate pool configurations (e.g. RAIDZ5, mirror etc.) are left to the user mto prepare and the script can be used to install to them. At present all functionality passes the tests listed at [Google Sheets](https://docs.google.com/spreadsheets/d/1F_enjjrheYRwfxnIVbyzsWkdxQesY6dfqt8ElmtgOL8/edit?usp=sharing) for commit 9e27688 and using Debian Live 10.1. 
+TODO: Opdate this when testing is performed: The intent of this script is to automate the instructions linked above. Alternate pool configurations (e.g. RAIDZ5, mirror etc.) are left to the user mto prepare and the script can be used to install to them. At present all functionality passes the tests listed at [Google Sheets](https://docs.google.com/spreadsheets/d/1F_enjjrheYRwfxnIVbyzsWkdxQesY6dfqt8ElmtgOL8/edit?usp=sharing) for commit 9e27688 and using Debian Live 10.1.
 
 The need for testing can come from several external sources.
 
 * Bug reports, pull requests and/or feature requests.
 * Upgrade of backports to a new version of ZFS.
-* Changes to the isntructions.
+* Changes to the instructions.
 
 When the script changes to accommodate either of these, all tests are repeated.
 
@@ -34,19 +41,20 @@ When the script changes to accommodate either of these, all tests are repeated.
 
 The intent is to follow the instructions closely, however occasional problems cropped up that required changes to the original instructions.
 
+* Uses the Bullseye live media to install Bullseye.
 * The script supports the capability to install dual boot with Windows or other Linux distros. It is entirely possible that it will not work with all distros. At present any problems encountered have resulted in failure to install and have not caused a problem with existing installations. Nevertheless is is highly recommended to back up the drive before proceeding. 
 * The `-f` (force) flag is included in the `zpool create` commands because on too many occasions the command exited with a warning and indicated it could be overridden with this flag.
 * The device is wiped using `wipefs` of all previous filesystem signatures. This was added because a previous ZFS pool would cause `zpool create` to fail, even with the `-f` option. In the case of using preconfigured partitions, this is applied to the partitions selected for the boot pool and root pool.
 * Specify the URL http://deb.debian.org/debian on the `debootstrap` command line. It is not clear to me what the default is.
+TODO: revciew all instructions to identify any other changes/deviations.
 
 ## Limitations
 
-* UEFI support only. All of my PCs on which I would use this support UEFI and I have found advantages to using that. In the case of dual boot support it can use the existing UEFI partition or a diffewrent UEFI partition can be created and used.
 * The script requires interaction. Some commands could probably be fully automated but at present it is necessary to acknowledge a popup regarding the ZFS license.
 
 ## Motivation
 
-Provide a script to install Debian on ZFS side by side with Windows 10. Instructions describe how to do this using Debian for the whole disk. With appropriate modifications it can be performed with preconfigured partitions or ZFS pools.
+Provide a script to install Debian on ZFS side by side with Windows 10. Instructions describe how to do this using Debian for the whole disk. With appropriate modifications it can be performed with preconfigured partitions or ZFS pools which have been p[repared in advance].
 
 Second... I have difficulty following detailed instructions. In the long run it is easier to script the process. It takes a little more time up front but can then be easily repeated when desired.
 
@@ -58,23 +66,9 @@ There are other scripts that may suit your needs better than this.
 * https://github.com/hn/debian-buster-zfs-root
 * https://github.com/saveriomiroddi/zfs-installer
 
-## Status
-
-At present (2021-03-12) Status is not current. Work is in progress to 
-
-1. Update to current instructions.
-1. Add support to install using BIOS/MBR boot (It turns out that my servers are ancient but still workable and do not support UEFI boot.)
-
-Some cursory testing has been performed on a VM. No testing yet on real metal.
-
-* Script has been checked with `shellcheck` and all reported issues resolved.
-* Script is current with the intructions listed at https://github.com/zfsonlinux/zfs/wiki/Debian-Buster-Root-on-ZFS except for the `sources.list` additions.
-* All test cases have passed using Debian Live 10.1. (see Errata)
-* Testing scripts have been revised and all pass `shellcheck`.
-
 ## WARNING WILL ROBINSON
 
-It may seem like a sensible thing to do to try to install to a drive from a normal system (as opposed to from a live boot environment.) It is not and it may make your existing system unbootable. (Second opportunity to roll back `bpool` and `rpool` today.)
+It may seem like a sensible thing to do to try to install to a drive from a normal system (as opposed to from a live environment booted from USB.) This has been tried and did not end well. (Second opportunity to roll back `bpool` and `rpool` today.)
 
 **If something goes wrong this script *will* destroy any data on any target system drive.** I captured a full disk image backup before testing this on any of my systems. Taking a full image backup takes less time than reinstalling Windows should that be needed.
 
@@ -100,7 +94,7 @@ Uses simple host name - not FQDN (step 4.1)
 
 ### Suggested
 
-Pick a settings file from the `.../testing` directoy and tailor it to fit your specifics. See also the files in `.../testing/obsolete`. Run the script using that. If necessary,modify the script itself.
+Pick a settings file from the `.../testing` directoy and tailor it to fit your specifics. Some commands in the settings files will prepare the test environment (and should not be included for normal usage) and others configure the environment variables used to perform the installation. Some day these will be clearly identified. See also the files in `.../testing/obsolete`. Run the script using that. If necessary,modify the script itself.
 
 ### ENV variables
 
@@ -112,7 +106,7 @@ Environment variables are provided to the script from a text file. If a text fil
 install_Debian_to_ZFS_root.sh env.sh
 ```
 
-It would probably be betrter to describe these files as configuration files. Early on, the script did get these variables from the environment but that was early in development.
+It would probably be better to describe these files as configuration files. Early on, the script did get these variables from the environment but that was early in development.
 
 Please see the test settings files to see what environment variables are used for the various cases.
 
