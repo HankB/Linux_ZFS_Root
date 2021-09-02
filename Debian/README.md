@@ -15,6 +15,7 @@ First: Review and update Debian/README.md
 Complete:
 
 * VM test using whole disk, no encryption (`testing/whole.std.no_enc.sh`)
+* VM test using specified partitions, native encryption (`testing/part.std.zfs_enc.sh`)
 
 ## Note
 

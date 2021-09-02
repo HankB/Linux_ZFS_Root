@@ -3,8 +3,15 @@
 
 # `install_Debian_to_ZFS_root.sh` can source this script to set 
 # these variables to determine how the install is to proceed.
-# adjust to your needs
+# adjust to your needs This script serves two functions. First it 
+# sets environment variables that control how the install is performed.
+# these include ZFS settings as well as the target partitions for
+# installation. Second, it prepares the test environment for testing
+# in a VM or performing destructive tests on a PC. The user probably
+# doesn't want to execute these when installing on their machine.
 
+#############################  production settings
+#
 set -u  # treat unset vars as errors
 export ETHERNET="enp0s3"
 export NEW_HOSTNAME="vbx01"
@@ -28,44 +35,33 @@ export EFI_PART=
 export ROOT_PART=
 export BOOT_PART=
 
-# for INSTALL_TYPE=whole_disk, set the following variable
-# specify only the last part of the path.
-# e,g `export DRIVE_ID=ata-SATA_SSD_18120612000764`
+#############################  end of production settings
 
-export DRIVE_ID="ata-VBOX_HARDDISK_VBfafda65f-8b22812e"
-
+#############################  testing settings and partitioning
+#
 # following works in Virtualbox VMs.
 DRIVE_ID=$(cd /dev/disk/by-id || exit 1; find . -name "*VBOX_HARDDISK*"| sed s/^..//|sort|head -1)
 export DRIVE_ID
 
-##### build the partitions for the test
+##### build the partitions for the test and set the partition variables
 # clear the drive
 wipefs -a /dev/disk/by-id/"$DRIVE_ID" # useful if the drive already had ZFS pools
 sgdisk --zap-all /dev/disk/by-id/"$DRIVE_ID"
 
-# EFI
+# EFI partition
 sgdisk -n2:1M:+512M -t2:EF00 /dev/disk/by-id/"$DRIVE_ID"
 export EFI_PART=/dev/disk/by-id/"$DRIVE_ID"-part2
 apt update
 apt install dosfstools
 mkdosfs -F 32 -s 1 -n EFI "$EFI_PART"
 
-# boot
+# boot pool partition
 sgdisk -n3:0:+1024M -t3:BF01 /dev/disk/by-id/"$DRIVE_ID"
 export BOOT_PART=/dev/disk/by-id/"$DRIVE_ID"-part3
 
-# root
+# root pool partition
 sgdisk -n4:0:0 -t4:BF01 /dev/disk/by-id/"$DRIVE_ID"
 export ROOT_PART=/dev/disk/by-id/"$DRIVE_ID"-part4
-#####
 
+#############################  end of testing settings and partitioning
 
-# for INSTALL_TYPE=use_pools, set the following variable
-# Specify entire path
-# e.g. 'export EFI_PART=/dev/disk/by-id/ata-SATA_SSD_18120612000764-part2'
-
-# export EFI_PART=
-
-# export ENCRYPT="yes|no"
-
-# LOCAL SETTINGS - may not otherwise be useful
