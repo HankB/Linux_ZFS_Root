@@ -256,14 +256,14 @@ iface ${ETHERNET} inet dhcp
 EOF
 
 # Step 4 section 3  Configure the package sources:
+# Replaced with the example at https://wiki.debian.org/SourcesList
 # Add `contrib` archive area:
-sed -i "s/^/# /" /mnt/etc/apt/sources.list
-cat <<EOF >> /mnt/etc/apt/sources.list
+cat <<EOF > /mnt/etc/apt/sources.list
 deb http://deb.debian.org/debian bullseye main contrib
 deb-src http://deb.debian.org/debian bullseye main contrib
 
-deb http://security.debian.org/debian-security bullseye/updates main contrib
-deb-src http://security.debian.org/debian-security bullseye/updates main contrib
+deb http://deb.debian.org/debian-security/ bullseye-security main contrib
+deb-src http://deb.debian.org/debian-security/ bullseye-security main contrib
 
 deb http://deb.debian.org/debian bullseye-updates main contrib
 deb-src http://deb.debian.org/debian bullseye-updates main contrib
@@ -344,7 +344,7 @@ else
 fi
 # Step 4 section 9 Remove os-prober for "whole_disk" install
 if [ "\$INSTALL_TYPE" == "whole_disk" ];then
-    apt remove --purge os-prober
+    apt remove --yes --purge os-prober
 fi
 
 # Step 4 section 10 Set a root password
@@ -419,7 +419,7 @@ fi
 mkdir /etc/zfs/zfs-list.cache
 touch /etc/zfs/zfs-list.cache/"\${ROOT_POOL_NAME}"
 touch /etc/zfs/zfs-list.cache/"\${BOOT_POOL_NAME}"
-ln -s /usr/lib/zfs-linux/zed.d/history_event-zfs-list-cacher.sh /etc/zfs/zed.d
+ln -s -f /usr/lib/zfs-linux/zed.d/history_event-zfs-list-cacher.sh /etc/zfs/zed.d
 
 ## This next section has been a little problematic. For now, just do a 'best effort'
 ## Getting 'zed' to populate the cache files. Start it, delay 30 seconds and kill it.
@@ -467,11 +467,15 @@ chmod +x /mnt/usr/local/sbin/chroot_commands.sh
 chroot /mnt /usr/bin/env bash /usr/local/sbin/chroot_commands.sh
 
 # Step 6 section 4 Run these commands in the LiveCD environment to unmount all filesystems
+# first test on VM, failed to umount /mnt. Race condition? ordering? Try a slight delay.
+echo >delay_umount 'sleep 1; echo umount $*;  umount -lf $*'
+chmod +x delay_umount
 mount | grep -v zfs | tac | awk '/\/mnt/ {print $3}' |\
-    xargs -i{} umount -lf {}
+    xargs -I{} ./delay_umount {}
 zpool export -a
 
-# fixup for root pool not found following reboot =============
+# =============
+# fixup for root pool not found following reboot
 # TODO: determine if still needed
 ## if ! zpool import -N "$ROOT_POOL_NAME" 
 ## then
@@ -479,7 +483,7 @@ zpool export -a
 ##     echo "root pool fixup applied"
 ## fi
 
-zpool export -a
+# zpool export -a
 # =============
 
 
