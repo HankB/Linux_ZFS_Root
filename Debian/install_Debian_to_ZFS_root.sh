@@ -1,15 +1,15 @@
 #!/bin/bash
 
-# 1.3 Become root:
-# sudo -i
+# Step 1 section 5. Become root. (Out of order so /etc/apt/sources.list can be modified)
 if [[ $EUID -ne 0 ]]; then
     exec sudo "$0" "$@"
 fi
+
 set -euo pipefail
 # set -e            # exit on error
 # set -u            # treat unset variables as errors
 # set -o pipefail   # check exit status of all commands in pipeline
-set -x            # expand commands - for debugging (temporary)
+# set -x            # expand commands - for debugging (temporary)
 
 if [ "$#"  == 0 ]; then
     echo 'using default ENV vars (env.sh)'
@@ -40,27 +40,31 @@ then
     export BOOT_TYPE="UEFI"
 fi
 
-# 1.4 disable automounting
+# Step 1 section 2. Setup and update the repositories: (sorry, order changed in instructions)
 
-gsettings set org.gnome.desktop.media-handling automount false
-
-# 1.2 Setup and update the repositories: (sorry, order changed in instructions)
-
-echo deb http://deb.debian.org/debian buster main contrib >> /etc/apt/sources.list
-echo deb http://deb.debian.org/debian buster-backports main contrib >> /etc/apt/sources.list
+#TODO - still needed?
+echo deb http://deb.debian.org/debian bullseye main contrib >> /etc/apt/sources.list
 
 apt update
 
-# 1.6 Install ZFS in the Live CD environment
-apt install --yes debootstrap gdisk dkms dpkg-dev linux-headers-"$(uname -r)"
-apt install --yes -t buster-backports --no-install-recommends zfs-dkms
-modprobe zfs
-apt install --yes -t buster-backports zfsutils-linux
+# 3. install/setup OpenSSH if desired 
+# see `initial.sh` for this.
 
-# 3 Disk Partitioning
+# Step 1 section 4. disable automounting
+
+gsettings set org.gnome.desktop.media-handling automount false
+
+
+# Step 1 section 6 Install ZFS in the Live CD environment
+apt install --yes debootstrap gdisk dkms dpkg-dev linux-headers-"$(uname -r)"
+apt install --yes --no-install-recommends zfs-dkms
+modprobe zfs
+apt install --yes zfsutils-linux
+
+# Step 2 Disk Formatting
 
 if [ "$INSTALL_TYPE" == "whole_disk" ];then
-    # 2 If you are re-using a disk, clear it as necessary
+    # Step 2 section 2 If you are re-using a disk, clear it as necessary
     # If the disk was previously used in an MD array, zero the superblock:
     apt install --yes mdadm
     mdadm --zero-superblock --force /dev/disk/by-id/"$DRIVE_ID"
@@ -68,7 +72,7 @@ if [ "$INSTALL_TYPE" == "whole_disk" ];then
     wipefs -a /dev/disk/by-id/"$DRIVE_ID"   # useful if the drive already had ZFS pools
     sgdisk --zap-all /dev/disk/by-id/"$DRIVE_ID"
 
-    # 3 Partition your disk
+    # Step 2 section 3 Partition your disk
     # Run this if you need legacy (BIOS) booting:
     if [ "$BOOT_TYPE" == "BIOS" ]; then
         sgdisk -a1 -n1:24K:+1000K -t1:EF02 /dev/disk/by-id/"$DRIVE_ID"
@@ -82,7 +86,7 @@ if [ "$INSTALL_TYPE" == "whole_disk" ];then
     sgdisk     -n3:0:+1G       -t3:BF01 /dev/disk/by-id/"$DRIVE_ID"
     export BOOT_PART=/dev/disk/by-id/"$DRIVE_ID"-part3
 
-    # 2.2 main pool 
+    # main pool 
     if [ "$LUKS_CRYPT" == "no" ]; then
         sgdisk     -n4:0:0      -t4:BF00 /dev/disk/by-id/"$DRIVE_ID"
     else
@@ -109,7 +113,7 @@ else
 fi
 
 if [ "$INSTALL_TYPE" != "use_pools" ];then 
-    # 4 Create the boot pool
+    # Step 2 section 4 Create the boot pool
     zpool create \
         -o cachefile=/etc/zfs/zpool.cache \
         -o ashift=12 -d \
@@ -125,16 +129,12 @@ if [ "$INSTALL_TYPE" != "use_pools" ];then
         -o feature@lz4_compress=enabled \
         -o feature@spacemap_histogram=enabled \
         -o feature@zpool_checkpoint=enabled \
-        -o feature@spacemap_v2=enabled \
-        -o feature@project_quota=enabled \
-        -o feature@resilver_defer=enabled \
-        -o feature@allocation_classes=enabled \
         -O acltype=posixacl -O canmount=off -O compression=lz4 -O devices=off \
         -O normalization=formD -O relatime=on -O xattr=sa \
         -O mountpoint=/boot -R /mnt -f \
         "${BOOT_POOL_NAME}" "$BOOT_PART"
 
-    # 5 Create the root pool
+    # Step 2 section 5 Create the root pool
     if [ "$LUKS_CRYPT" == yes ]; then
         # LUKS encryption
         apt install --yes cryptsetup
@@ -142,41 +142,44 @@ if [ "$INSTALL_TYPE" != "use_pools" ];then
         cryptsetup luksOpen "$ROOT_PART" luks1
         zpool create \
             -o ashift=12 \
-            -O acltype=posixacl -O canmount=off -O compression=lz4 \
+            -O encryption=aes-256-gcm \
+            -O keylocation=prompt -O keyformat=passphrase \
+            -O acltype=posixacl -O canmount=off -O compression=zstd \
             -O dnodesize=auto -O normalization=formD -O relatime=on \
             -O xattr=sa -O mountpoint=/ -R /mnt \
             "${ROOT_POOL_NAME}" /dev/mapper/luks1
     elif [ "$ZFS_CRYPT" == "yes" ]; then
         # ZFS native encryption
-        zpool create -o ashift=12 \
-            -O acltype=posixacl -O canmount=off -O compression=lz4 \
+        zpool create \
+            -o ashift=12 \
+            -O encryption=aes-256-gcm \
+            -O keylocation=prompt -O keyformat=passphrase \
+            -O acltype=posixacl -O canmount=off -O compression=zstd \
             -O dnodesize=auto -O normalization=formD -O relatime=on \
-            -O xattr=sa -O encryption=aes-256-gcm -O keylocation=prompt -O keyformat=passphrase \
-            -O mountpoint=/ -R /mnt -f \
+            -O xattr=sa -O mountpoint=/ -R /mnt -f \
             "${ROOT_POOL_NAME}" "$ROOT_PART"
     else
         # Unencrypted
         zpool create \
             -o ashift=12 \
-            -O acltype=posixacl -O canmount=off -O compression=lz4 \
-            -O dnodesize=auto -O normalization=formD -O relatime=on -O xattr=sa \
-            -O mountpoint=/ -R /mnt -f \
+            -O acltype=posixacl -O canmount=off -O compression=zstd \
+            -O dnodesize=auto -O normalization=formD -O relatime=on \
+            -O xattr=sa -O mountpoint=/ -R /mnt -f \
             "${ROOT_POOL_NAME}" "$ROOT_PART"
     fi
 fi
 
-# 3.1 Create filesystem datasets to act as containers
+# Step 3 section 1 Create filesystem datasets to act as containers
 zfs create -o canmount=off -o mountpoint=none "${ROOT_POOL_NAME}"/ROOT
 zfs create -o canmount=off -o mountpoint=none "${BOOT_POOL_NAME}"/BOOT
 
-# 3.2 Create a filesystem datasets for the root and boot filesystems
+# Step 3 section 2 Create a filesystem datasets for the root and boot filesystems
 zfs create -o canmount=noauto -o mountpoint=/ "${ROOT_POOL_NAME}"/ROOT/debian
 zfs mount "${ROOT_POOL_NAME}"/ROOT/debian
 
-zfs create -o canmount=noauto -o mountpoint=/boot "${BOOT_POOL_NAME}"/BOOT/debian
-zfs mount "${BOOT_POOL_NAME}"/BOOT/debian
+zfs create -o mountpoint=/boot "${BOOT_POOL_NAME}"/BOOT/debian
 
-# 3.3 Create datasets
+# Step 3 section 3 Create datasets
 zfs create                                            "${ROOT_POOL_NAME}"/home
 zfs create -o mountpoint=/root                        "${ROOT_POOL_NAME}"/home/root
 chmod 700 /mnt/root
@@ -229,14 +232,14 @@ mkdir /mnt/run/lock
 # zfs create -o com.sun:auto-snapshot=false  rpool/tmp
 # chmod 1777 /mnt/tmp
 
-# 3.4 Install the minimal system
-debootstrap buster /mnt http://deb.debian.org/debian
+# Step 3 section 4 Install the minimal system
+debootstrap bullseye /mnt http://deb.debian.org/debian
 
-# Copy in zpool.cache
+# Step 3 section 5 Copy in zpool.cache
 mkdir /mnt/etc/zfs
 cp /etc/zfs/zpool.cache /mnt/etc/zfs/
 
-# 4.1 Configure the hostname (change HOSTNAME to the desired hostname).
+# Step 4 section 1 Configure the hostname (change HOSTNAME to the desired hostname).
 echo "$NEW_HOSTNAME" > /mnt/etc/hostname
 echo "127.0.1.1       $NEW_HOSTNAME" >> /mnt/etc/hosts
 # Add a line:
@@ -244,7 +247,7 @@ echo "127.0.1.1       $NEW_HOSTNAME" >> /mnt/etc/hosts
 # or if the system has a real name in DNS:
 # 127.0.1.1       FQDN HOSTNAME
 
-# 4.2 Configure the network interface:
+# Step 4 section 2 Configure the network interface:
 # Find the interface name:
 # ip addr show
 cat >/mnt/etc/network/interfaces.d/"${ETHERNET}" <<EOF
@@ -252,37 +255,37 @@ auto ${ETHERNET}
 iface ${ETHERNET} inet dhcp
 EOF
 
-# 4.3  Configure the package sources:
+# Step 4 section 3  Configure the package sources:
 # Add `contrib` archive area:
 sed -i "s/^/# /" /mnt/etc/apt/sources.list
 cat <<EOF >> /mnt/etc/apt/sources.list
-deb http://deb.debian.org/debian buster main contrib
-deb-src http://deb.debian.org/debian buster main contrib
+deb http://deb.debian.org/debian bullseye main contrib
+deb-src http://deb.debian.org/debian bullseye main contrib
 
-deb http://security.debian.org/debian-security buster/updates main contrib
-deb-src http://security.debian.org/debian-security buster/updates main contrib
+deb http://security.debian.org/debian-security bullseye/updates main contrib
+deb-src http://security.debian.org/debian-security bullseye/updates main contrib
 
-deb http://deb.debian.org/debian buster-updates main contrib
-deb-src http://deb.debian.org/debian buster-updates main contrib
+deb http://deb.debian.org/debian bullseye-updates main contrib
+deb-src http://deb.debian.org/debian bullseye-updates main contrib
 EOF
 
-# Add backports to apt sources
+# Add backports to apt sources - not yet, perhaps in the future
 
-cat > /mnt/etc/apt/sources.list.d/buster-backports.list <<EOF
-deb http://deb.debian.org/debian buster-backports main contrib
-deb-src http://deb.debian.org/debian buster-backports main contrib
-EOF
+## cat > /mnt/etc/apt/sources.list.d/bullseye-backports.list <<EOF
+## deb http://deb.debian.org/debian bullseye-backports main contrib
+## deb-src http://deb.debian.org/debian bullseye-backports main contrib
+## EOF
 
-cat >  /mnt/etc/apt/preferences.d/90_zfs <<EOF
-Package: libnvpair1linux libuutil1linux libzfs2linux libzfslinux-dev \
-         libzpool2linux python3-pyzfs pyzfs-doc spl spl-dkms zfs-dkms \
-         zfs-dracut zfs-initramfs zfs-test zfsutils-linux zfsutils-linux-dev zfs-zed
-Pin: release n=buster-backports
-Pin-Priority: 990
-EOF
+## cat >  /mnt/etc/apt/preferences.d/90_zfs <<EOF
+## Package: libnvpair1linux libuutil1linux libzfs2linux libzfslinux-dev \
+## ##          libzpool2linux python3-pyzfs pyzfs-doc spl spl-dkms zfs-dkms \
+##          zfs-dracut zfs-initramfs zfs-test zfsutils-linux zfsutils-linux-dev zfs-zed
+## Pin: release n=bullseye-backports
+## Pin-Priority: 990
+## EOF
 
 
-# 4.4  Bind the virtual filesystems from the LiveCD environment to the new system
+# Step 4 section 4  Bind the virtual filesystems from the LiveCD environment to the new system
 # and `chroot` into it:
 
 mount --rbind /dev  /mnt/dev
@@ -299,20 +302,21 @@ set -euo pipefail
 # set -e            # exit on error
 # set -u            # treat unset variables as errors
 # set -o pipefail   # check exit status of all commands in pipeline
-set -x            # expand commands - for debugging
+# set -x            # expand commands - for debugging
 
-# 4.5 Configure a basic system environment
+# Step 4 section 5 Configure a basic system environment
 ln -s /proc/self/mounts /etc/mtab
 apt update
 apt install --yes console-setup locales
+# Even if you prefer a non-English system language, always ensure that en_US.UTF-8 is available:
 dpkg-reconfigure locales tzdata keyboard-configuration console-setup
 
-# 4.6 Install ZFS in the chroot environment for the new system
+# Step 4 section 6 Install ZFS in the chroot environment for the new system
 apt install --yes dpkg-dev linux-headers-amd64 linux-image-amd64
 apt install --yes zfs-initramfs
 echo REMAKE_INITRD=yes > /etc/dkms/zfs.conf
 
-# 4.7 For LUKS installs only, setup crypttab:
+# Step 4 section 7 For LUKS installs only, setup crypttab:
 if [ "\$LUKS_CRYPT" == "yes" ]; then
     apt install --yes cryptsetup
     echo luks1 UUID=\$(blkid -s UUID -o value \
@@ -321,8 +325,8 @@ if [ "\$LUKS_CRYPT" == "yes" ]; then
 fi
 
 
-# 4.8 Install GRUB
-# Format the EFI partition, regardless
+# Step 4 section 8 Install GRUB
+# Format the EFI partition for "whole_disk" regardless whether EFI or MBR is used
 if [ "\$INSTALL_TYPE" == "whole_disk" ];then
     apt install dosfstools
     mkdosfs -F 32 -s 1 -n EFI \${EFI_PART}
@@ -338,8 +342,12 @@ else
     mount /boot/efi
     apt install --yes grub-efi-amd64 shim-signed
 fi
+# Step 4 section 9 Remove os-prober for "whole_disk" install
+if [ "\$INSTALL_TYPE" == "whole_disk" ];then
+    apt remove --purge os-prober
+fi
 
-# 4.9 Set a root password
+# Step 4 section 10 Set a root password
 echo "set a root password"
 set +e
 while ! passwd 
@@ -348,7 +356,7 @@ do
 done
 set -e
 
-# 4.9 Enable importing bpool
+# Step 4 section 11 Enable importing bpool
 cat <<EOF >/etc/systemd/system/zfs-import-"\${BOOT_POOL_NAME}".service
 [Unit]
 DefaultDependencies=no
@@ -369,65 +377,53 @@ EOF
 
 systemctl enable zfs-import-"\${BOOT_POOL_NAME}".service
 
-# 4.10 Optional (but recommended): Mount a tmpfs to /tmp
+# Step 4 section 12 Optional (but recommended): Mount a tmpfs to /tmp
 cp /usr/share/systemd/tmp.mount /etc/systemd/system/
 systemctl enable tmp.mount
 
-# 4.11 Optional (but kindly requested): Install popcon
+# Step 4 section 13 Optional (but kindly requested): Install popcon
 apt install --yes popularity-contest
 
-# 5.1 Verify that the ZFS root filesystem is recognized
+# Step 5 section 1 Verify that the ZFS root filesystem is recognized
 if ! [ \`grub-probe /boot\` == "zfs" ];then
     echo "grub-probe != zfs"
     exit 1
 fi
 
-# 5.2 Refresh the initrd files
+# Step 5 section 2 Refresh the initrd files
 update-initramfs -c -k all
 
-# 5.3 Workaround GRUB's missing zpool-features support:
+# Step 5 section 3 Workaround GRUB's missing zpool-features support:
 sed -i "s|^GRUB_CMDLINE_LINUX=\"|GRUB_CMDLINE_LINUX=\"root=ZFS=\${ROOT_POOL_NAME}/ROOT/debian |" \
         /etc/default/grub
 
-# 5.4 Optional (but highly recommended): Make debugging GRUB easier
+# Step 5 section 4 Optional (but highly recommended): Make debugging GRUB easier
 sed -i "s/quiet//" /etc/default/grub
 sed -i "s/#GRUB_TERMINAL/GRUB_TERMINAL/" /etc/default/grub
 
-# 5.5 Update the boot configuration
+# Step 5 section 5 Update the boot configuration
 update-grub
 
-# 5.6 Install the boot loader
+# Step 5 section 6 Install the boot loader
 if [ "\$BOOT_TYPE" == "BIOS" ]; then
+    # For legacy (BIOS) booting, install GRUB to the MBR
     grub-install /dev/disk/by-id/"\$DRIVE_ID"
 else
-    # 5.6b For UEFI booting, install GRUB
+    # For UEFI booting, install GRUB to the ESP
     grub-install --target=x86_64-efi --efi-directory=/boot/efi \
         --bootloader-id=debian --recheck --no-floppy
 fi
 
-# 5.x Verify that the ZFS module is installed
-# no longer used? ls /boot/grub/*/zfs.mod
-
-# 5.7 Fix filesystem mount ordering
-
-# For UEFI booting, unmount /boot/efi first:
-# if [ "\$BOOT_TYPE" == "UEFI" ]; then
-#     umount /boot/efi
-# fi
-# Everything else applies to both BIOS and UEFI booting:
-
-
-#  "\${BOOT_POOL_NAME}"/BOOT/debian
-# echo "\${BOOT_POOL_NAME}"/BOOT/debian /boot zfs \
-#     nodev,relatime,x-systemd.requires=zfs-import-${BOOT_POOL_NAME}.service 0 0 >> /etc/fstab
+# Step 5 section 7 Fix filesystem mount ordering
 
 mkdir /etc/zfs/zfs-list.cache
 touch /etc/zfs/zfs-list.cache/"\${ROOT_POOL_NAME}"
 touch /etc/zfs/zfs-list.cache/"\${BOOT_POOL_NAME}"
-# ln -s /usr/lib/zfs-linux/zed.d/history_event-zfs-list-cacher.sh /etc/zfs/zed.d
+ln -s /usr/lib/zfs-linux/zed.d/history_event-zfs-list-cacher.sh /etc/zfs/zed.d
 
 ## This next section has been a little problematic. For now, just do a 'best effort'
-## Getting `zed` to populate the cache files. Start it, delay 30 seconds and kill it.
+## Getting 'zed' to populate the cache files. Start it, delay 30 seconds and kill it.
+## (Previous was to loop and wait for the files to exist and have something in them.)
 zed -F &
 ZED_PID=\$!
 echo delay 30 seconds
@@ -455,32 +451,33 @@ sleep 30
 ## # delay one more time to avoid apparent race condition
 ## sleep 3
 kill \$ZED_PID
-ls -l  /etc/zfs/zfs-list.cache/"\${BOOT_POOL_NAME}" /etc/zfs/zfs-list.cache/"\${ROOT_POOL_NAME}" 
+ls -l  /etc/zfs/zfs-list.cache/* 
 ## 
 # Fix the paths to eliminate /mnt:
-sed -Ei "s|/mnt/?|/|" "/etc/zfs/zfs-list.cache/\${BOOT_POOL_NAME}" "/etc/zfs/zfs-list.cache/\${ROOT_POOL_NAME}" 
+sed -Ei "s|/mnt/?|/|" /etc/zfs/zfs-list.cache/*
 
-# 6.1 Snapshot the initial installation
+# Step 6 section 1 Snapshot the initial installation (before rebooting)
 zfs snapshot "\${ROOT_POOL_NAME}"/ROOT/debian@install
 zfs snapshot "\${BOOT_POOL_NAME}"/BOOT/debian@install
 
-# 6.2 Exit from the chroot environment back to the LiveCD environment
+# Step 6 section 3 Exit from the chroot environment back to the LiveCD environment
 exit
 END_OF_CHROOT
 chmod +x /mnt/usr/local/sbin/chroot_commands.sh
 chroot /mnt /usr/bin/env bash /usr/local/sbin/chroot_commands.sh
 
-# 6.3 Run these commands in the LiveCD environment to unmount all filesystems
+# Step 6 section 4 Run these commands in the LiveCD environment to unmount all filesystems
 mount | grep -v zfs | tac | awk '/\/mnt/ {print $3}' |\
     xargs -i{} umount -lf {}
 zpool export -a
 
 # fixup for root pool not found following reboot =============
-if ! zpool import -N "$ROOT_POOL_NAME" 
-then
-    zpool import -N -d "$ROOT_PART" "$ROOT_POOL_NAME" 
-    echo "root pool fixup applied"
-fi
+# TODO: determine if still needed
+## if ! zpool import -N "$ROOT_POOL_NAME" 
+## then
+##     zpool import -N -d "$ROOT_PART" "$ROOT_POOL_NAME" 
+##     echo "root pool fixup applied"
+## fi
 
 zpool export -a
 # =============
