@@ -4,18 +4,14 @@ Script to facilitate installing Debian Bullseye on a ZFS root.
 
 ## Status
 
-At present (2021-09-02) Work is in progress to 
+The world is moving to Debian Bullseye. So is this script. At present there are no instructions for installing on Bullseye so the script was modified based on the instructions for Buster and changes s/buster/bullseye/ made accordingly. In addition, the backports have been removed from the `apt` sources files. As of 2021-09-07 ZFS is not in  `bullseye-backports`. The slightly modified install seems to work fine for me. (One user has been having difficulty with `rpool` not imported at boot.)
 
-1. Update to current instructions (which have been renumbered)
-1. Install using Debian Bullseye
-1. Clarify which portions of the test ENV scripts configure the test environment vs. which configure the actual installation
-
-First: Review and update Debian/README.md
+As some users may wish to install Buster, the code as it stands has been branched as `buster` and will likely only see bugfixes if needed.
 
 Complete:
 
 * VM test using whole disk, no encryption (`testing/whole.std.no_enc.sh`)
-* VM test using specified partitions, native encryption (`testing/part.std.zfs_enc.sh`)
+* VM, real metal test using specified partitions, native encryption (`testing/part.std.zfs_enc.sh`)
 
 ## Note
 
@@ -32,15 +28,7 @@ Any references to "instructions" below refer to the contents of this link.
 
 ## Roadmap
 
-TODO: Opdate this when testing is performed: The intent of this script is to automate the instructions linked above. Alternate pool configurations (e.g. RAIDZ5, mirror etc.) are left to the user mto prepare and the script can be used to install to them. At present all functionality passes the tests listed at [Google Sheets](https://docs.google.com/spreadsheets/d/1F_enjjrheYRwfxnIVbyzsWkdxQesY6dfqt8ElmtgOL8/edit?usp=sharing) for commit 9e27688 and using Debian Live 10.1.
-
-The need for testing can come from several external sources.
-
-* Bug reports, pull requests and/or feature requests.
-* Upgrade of backports to a new version of ZFS.
-* Changes to the instructions.
-
-When the script changes to accommodate either of these, all tests are repeated.
+At present two install scenarios have been tested. All require testing.
 
 ## Deviations from Debian Buster Root on ZFS
 
@@ -51,11 +39,11 @@ The intent is to follow the instructions closely, however occasional problems cr
 * The `-f` (force) flag is included in the `zpool create` commands because on too many occasions the command exited with a warning and indicated it could be overridden with this flag.
 * The device is wiped using `wipefs` of all previous filesystem signatures. This was added because a previous ZFS pool would cause `zpool create` to fail, even with the `-f` option. In the case of using preconfigured partitions, this is applied to the partitions selected for the boot pool and root pool.
 * Specify the URL http://deb.debian.org/debian on the `debootstrap` command line. It is not clear to me what the default is.
-TODO: revciew all instructions to identify any other changes/deviations.
+TODO: reciew all instructions to identify any other changes/deviations.
 
 ## Limitations
 
-* The script requires interaction. Some commands could probably be fully automated but at present it is necessary to acknowledge a popup regarding the ZFS license.
+* The script requires interaction. Some commands could probably be fully automated but at present it is necessary to acknowledge a popup regarding the ZFS license. Be expecially careful when typing the pass phrase as if the two dont match, the install fails.
 
 ## Motivation
 
@@ -111,8 +99,6 @@ Environment variables are provided to the script from a text file. If a text fil
 install_Debian_to_ZFS_root.sh env.sh
 ```
 
-It would probably be better to describe these files as configuration files. Early on, the script did get these variables from the environment but that was early in development.
-
 Please see the test settings files to see what environment variables are used for the various cases.
 
 Examples of settings are shown.
@@ -121,7 +107,7 @@ Examples of settings are shown.
 
 Please see the README in testing.
 
-In order to improve quality the script is now checked with the `shellcheck` script linter.
+In order to improve quality the script is now checked with the `shellcheck` script linter. The script run within the `chroot` has also been checked with `shellcheck` and produced several warnings. I spent an hour or two trying to fix those before deciding they were not so serious.
 
 ## Contributing
 
@@ -135,5 +121,5 @@ I have submitted issues for things that I anticipate as possible next steps. If 
 
 ## Errata
 
-1. Many tests do not perform well resulting in a no rpool condition on reboot. Repeating the identical test often succeeded. Fiddling with rpool before booting sometimes helps. This has been seen on real H/W as well. A fixup was added at the end of the script which will report `root pool fixup applied` if needed and otherwise simply import and then export the pool. During testing the fixup was never seen. Final version during testing was 0.8.2-2~bpo10+1 and perhaps a fix was issued for this. ZFS version will be tracked more closely during subsequent testing.
-1. When installing to preconfigured partitions and when using UEFI boot, it is assumed that the EFI partition exists and for that reason it will noe be formatted by the script. This is done this way to support dual boot. For this reason if you create an empty EFI partition, it must be formatted before running the script or the script will fail.
+1. Many tests do not perform well resulting in a no rpool condition on reboot. Repeating the identical test often succeeded. Fiddling with rpool before booting sometimes helps. This has been seen on real H/W as well. A fixup was added at the end of the script which will report `root pool fixup applied` if needed and otherwise simply import and then export the pool. During testing the fixup was never seen. Final version during testing was zfs-2.0.3-9 and perhaps a fix was issued for this. ZFS version will be tracked more closely during subsequent testing.
+1. When installing to preconfigured partitions and when using UEFI boot, it is assumed that the EFI partition exists and for that reason it will not be formatted by the script. This is done to support dual boot. For this reason if you create an empty EFI partition, it must be formatted before running the script or the script will fail.
