@@ -1,6 +1,6 @@
 # Linux_ZFS_Root
 
-Commands/script to install Linux on ZFS root. There are presently two variants, one that installs Ubuntu and the other, Debian Stretch. Please see the README in .../Ubuntu and .../Debian for further details.
+Commands/script to install Linux on ZFS root. There are presently two variants, one that installs Ubuntu and the other, Debian Bullseye (or Buster). Please see the README in .../Ubuntu and .../Debian for further details.
 
 ## Status
 
@@ -10,4 +10,4 @@ Ubuntu branch is virtually abandoned. Canonical is pursuing support of ZFS on ro
 
 ### Debian
 
-Debian is under active development. The script has been updated to support Buster and use backports. At present it only supports ZFS from backports. (Backports provide 0.8.2 while the regular repos include 0.7.12.) Work is complete but not fully tested.
+Debian is under active development. The script has been updated to support Bullseye and use backports for Buster. (As of 2021-09-07 backports provide zfs-2.0.3-9~bpo10+1 on Buster and zfs-2.0.3-9 is available in the normal repos on Bullseye.  
