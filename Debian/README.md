@@ -19,7 +19,7 @@ Please see warnings.
 
 Debian 11.0 Live Gnome install media is used for all testing and is recommended. (`debian-live-11.0.0-amd64-gnome.iso` from <https://cdimage.debian.org/mirror/cdimage/release/current-live/amd64/iso-hybrid/>)
 
-Backports are no longer used as Bulklseye and backports on Buster both use 2.0.3-9 as of 2021-09-02.
+Backports are no longer used as Bullseye and backports on Buster both use 2.0.3-9 as of 2021-09-02.
 
 ## Inspiration
 
@@ -39,11 +39,11 @@ The intent is to follow the instructions closely, however occasional problems cr
 * The `-f` (force) flag is included in the `zpool create` commands because on too many occasions the command exited with a warning and indicated it could be overridden with this flag.
 * The device is wiped using `wipefs` of all previous filesystem signatures. This was added because a previous ZFS pool would cause `zpool create` to fail, even with the `-f` option. In the case of using preconfigured partitions, this is applied to the partitions selected for the boot pool and root pool.
 * Specify the URL http://deb.debian.org/debian on the `debootstrap` command line. It is not clear to me what the default is.
-TODO: reciew all instructions to identify any other changes/deviations.
+TODO: review all instructions to identify any other changes/deviations.
 
 ## Limitations
 
-* The script requires interaction. Some commands could probably be fully automated but at present it is necessary to acknowledge a popup regarding the ZFS license. Be expecially careful when typing the pass phrase as if the two dont match, the install fails.
+* The script requires interaction. Some commands could probably be fully automated but at present it is necessary to acknowledge a popup regarding the ZFS license. Be especially careful when typing the pass phrase as if the two dont match, the install fails.
 
 ## Motivation
 
