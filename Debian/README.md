@@ -4,7 +4,7 @@ Script to facilitate installing Debian Bullseye on a ZFS root.
 
 ## Status
 
-The world is moving to Debian Bullseye. So is this script. At present there are no instructions for installing on Bullseye so the script was modified based on the instructions for Buster and changes s/buster/bullseye/ made accordingly. In addition, the backports have been removed from the `apt` sources files. As of 2021-09-07 ZFS is not in  `bullseye-backports`. The slightly modified install seems to work fine for me. (One user has been having difficulty with `rpool` not imported at boot.)
+As of 2022-07-15 I have the need to install on a new drive in my laptop. Instructions for Bullseye have been out for a while so the script has been revised (first cut) to match changes in the instructions. At present backports are not employed but I may consider adding that.
 
 As some users may wish to install Buster, the code as it stands has been branched as `buster` and will likely only see bugfixes if needed.
 
@@ -34,7 +34,6 @@ At present two install scenarios have been tested. All require testing.
 
 The intent is to follow the instructions closely, however occasional problems cropped up that required changes to the original instructions.
 
-* Uses the Bullseye live media to install Bullseye.
 * The script supports the capability to install dual boot with Windows or other Linux distros. It is entirely possible that it will not work with all distros. At present any problems encountered have resulted in failure to install and have not caused a problem with existing installations. Nevertheless is is highly recommended to back up the drive before proceeding. 
 * The `-f` (force) flag is included in the `zpool create` commands because on too many occasions the command exited with a warning and indicated it could be overridden with this flag.
 * The device is wiped using `wipefs` of all previous filesystem signatures. This was added because a previous ZFS pool would cause `zpool create` to fail, even with the `-f` option. In the case of using preconfigured partitions, this is applied to the partitions selected for the boot pool and root pool.
@@ -43,7 +42,7 @@ TODO: review all instructions to identify any other changes/deviations.
 
 ## Limitations
 
-* The script requires interaction. Some commands could probably be fully automated but at present it is necessary to acknowledge a popup regarding the ZFS license. Be especially careful when typing the pass phrase as if the two dont match, the install fails.
+* The script requires interaction. Some commands could probably be fully automated but at present it is necessary to acknowledge a popup regarding the ZFS license. Be especially careful when typing the pass phrase as if the two don't match, the install fails.
 
 ## Motivation
 
@@ -81,7 +80,7 @@ Uses `tmpfs` for `/tmp`.
 
 Uses simple host name - not FQDN (step 4.1)
 
-`popularity-contest` (popularity contest) installed by default.
+`popularity-contest` and `openssh-server` installed by default.
 
 ## Usage
 

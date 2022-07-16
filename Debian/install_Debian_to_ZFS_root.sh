@@ -56,7 +56,8 @@ gsettings set org.gnome.desktop.media-handling automount false
 
 
 # Step 1 section 6 Install ZFS in the Live CD environment
-apt install --yes debootstrap gdisk dkms dpkg-dev linux-headers-"$(uname -r)"
+#apt install --yes debootstrap gdisk dkms dpkg-dev linux-headers-"$(uname -r)"
+apt install --yes debootstrap gdisk zfsutils-linux
 apt install --yes --no-install-recommends zfs-dkms
 modprobe zfs
 apt install --yes zfsutils-linux
@@ -115,8 +116,9 @@ fi
 if [ "$INSTALL_TYPE" != "use_pools" ];then 
     # Step 2 section 4 Create the boot pool
     zpool create \
+        -o ashift=12 \
+        -o autotrim=on -d \
         -o cachefile=/etc/zfs/zpool.cache \
-        -o ashift=12 -d \
         -o feature@async_destroy=enabled \
         -o feature@bookmarks=enabled \
         -o feature@embedded_data=enabled \
@@ -126,12 +128,17 @@ if [ "$INSTALL_TYPE" != "use_pools" ];then
         -o feature@filesystem_limits=enabled \
         -o feature@hole_birth=enabled \
         -o feature@large_blocks=enabled \
+        -o feature@livelist=enabled \
         -o feature@lz4_compress=enabled \
         -o feature@spacemap_histogram=enabled \
         -o feature@zpool_checkpoint=enabled \
-        -O acltype=posixacl -O canmount=off -O compression=lz4 -O devices=off \
-        -O normalization=formD -O relatime=on -O xattr=sa \
-        -O mountpoint=/boot -R /mnt -f \
+        -O devices=off \
+        -O acltype=posixacl \
+        -O xattr=sa \
+        -O compression=lz4 \
+        -O normalization=formD \
+        -O relatime=on \
+        -O canmount=off -O mountpoint=/boot -R /mnt \
         "${BOOT_POOL_NAME}" "$BOOT_PART"
 
     # Step 2 section 5 Create the root pool
@@ -142,29 +149,43 @@ if [ "$INSTALL_TYPE" != "use_pools" ];then
         cryptsetup luksOpen "$ROOT_PART" luks1
         zpool create \
             -o ashift=12 \
-            -O encryption=aes-256-gcm \
-            -O keylocation=prompt -O keyformat=passphrase \
-            -O acltype=posixacl -O canmount=off -O compression=zstd \
-            -O dnodesize=auto -O normalization=formD -O relatime=on \
-            -O xattr=sa -O mountpoint=/ -R /mnt \
+            -o autotrim=on \
+            -O acltype=posixacl \
+            -O xattr=sa \
+            -O dnodesize=auto \
+            -O compression=zstd \
+            -O normalization=formD \
+            -O relatime=on \
+            -O canmount=off -O mountpoint=/ -R /mnt \
             "${ROOT_POOL_NAME}" /dev/mapper/luks1
     elif [ "$ZFS_CRYPT" == "yes" ]; then
         # ZFS native encryption
         zpool create \
             -o ashift=12 \
-            -O encryption=aes-256-gcm \
-            -O keylocation=prompt -O keyformat=passphrase \
-            -O acltype=posixacl -O canmount=off -O compression=zstd \
-            -O dnodesize=auto -O normalization=formD -O relatime=on \
-            -O xattr=sa -O mountpoint=/ -R /mnt -f \
+            -o autotrim=on \
+            -O encryption=on \
+            -O keylocation=prompt \
+            -O keyformat=passphrase \
+            -O acltype=posixacl \
+            -O xattr=sa \
+            -O dnodesize=auto \
+            -O compression=zstd \
+            -O normalization=formD \
+            -O relatime=on \
+            -O canmount=off -O mountpoint=/ -R /mnt -f \
             "${ROOT_POOL_NAME}" "$ROOT_PART"
     else
         # Unencrypted
         zpool create \
             -o ashift=12 \
-            -O acltype=posixacl -O canmount=off -O compression=zstd \
-            -O dnodesize=auto -O normalization=formD -O relatime=on \
-            -O xattr=sa -O mountpoint=/ -R /mnt -f \
+            -o autotrim=on \
+            -O acltype=posixacl \
+            -O xattr=sa \
+            -O dnodesize=auto \
+            -O compression=zstd \
+            -O normalization=formD \
+            -O relatime=on \
+            -O canmount=off -O mountpoint=/ -R /mnt \
             "${ROOT_POOL_NAME}" "$ROOT_PART"
     fi
 fi
@@ -189,11 +210,9 @@ zfs create                                            "${ROOT_POOL_NAME}"/var/lo
 zfs create                                            "${ROOT_POOL_NAME}"/var/spool
 # If you wish to exclude these from snapshots:
 zfs create -o com.sun:auto-snapshot=false             "${ROOT_POOL_NAME}"/var/cache
+zfs create -o com.sun:auto-snapshot=false             "${ROOT_POOL_NAME}"/var/lib/nfs
 zfs create -o com.sun:auto-snapshot=false             "${ROOT_POOL_NAME}"/var/tmp
 chmod 1777 /mnt/var/tmp
-
-# If you use /opt on this system:
-zfs create                                            "${ROOT_POOL_NAME}"/opt
 
 # If you use /srv on this system:
 zfs create                                            "${ROOT_POOL_NAME}"/srv
@@ -214,14 +233,12 @@ zfs create                                            "${ROOT_POOL_NAME}"/var/sn
 # If you use /var/www on this system:
 zfs create                                            "${ROOT_POOL_NAME}"/var/www
 
-# If this system will use GNOME:
+# If this system will have a GUI:
 zfs create                                            "${ROOT_POOL_NAME}"/var/lib/AccountsService
+zfs create                                            "${ROOT_POOL_NAME}"/var/lib/NetworkManager
 
 # If this system will use Docker (which manages its own datasets & snapshots):
 zfs create -o com.sun:auto-snapshot=false             "${ROOT_POOL_NAME}"/var/lib/docker
-
-# If this system will use NFS (locking):
-zfs create -o com.sun:auto-snapshot=false             "${ROOT_POOL_NAME}"/var/lib/nfs
 
 # Mount a tmpfs at /run:
 mkdir /mnt/run
@@ -312,7 +329,7 @@ apt install --yes console-setup locales
 dpkg-reconfigure locales tzdata keyboard-configuration console-setup
 
 # Step 4 section 6 Install ZFS in the chroot environment for the new system
-apt install --yes dpkg-dev linux-headers-amd64 linux-image-amd64
+apt install --yes dpkg-dev linux-headers-generic linux-image-generic
 apt install --yes zfs-initramfs
 echo REMAKE_INITRD=yes > /etc/dkms/zfs.conf
 
@@ -338,7 +355,7 @@ else
     # Install GRUB for UEFI booting
     mkdir /boot/efi
     echo \${EFI_PART} \
-        /boot/efi vfat nofail,x-systemd.device-timeout=1 0 1 >> /etc/fstab
+        /boot/efi vfat defaults 0 1 >> /etc/fstab
     mount /boot/efi
     apt install --yes grub-efi-amd64 shim-signed
 fi
@@ -381,7 +398,16 @@ systemctl enable zfs-import-"\${BOOT_POOL_NAME}".service
 cp /usr/share/systemd/tmp.mount /etc/systemd/system/
 systemctl enable tmp.mount
 
-# Step 4 section 13 Optional (but kindly requested): Install popcon
+# Step 4 section 13 Optional: Install SSH:
+apt install --yes openssh-server
+vi +/PermitRootLogin /etc/ssh/sshd_config
+
+# Step 4 section 14 Optional: \
+#     For ZFS native encryption or LUKS, configure Dropbear for remote unlocking:
+
+# Not done yet
+
+# Step 4 section 15 Optional (but kindly requested): Install popcon
 apt install --yes popularity-contest
 
 # Step 5 section 1 Verify that the ZFS root filesystem is recognized
