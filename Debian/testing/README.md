@@ -21,7 +21,7 @@ My procedure is as follows.
 sudo -s
 apt update
 apt install openssh-server
-systemctl start openssh-server
+systemctl start sshd
 ```
 
 4) `sftp` to from host to guest and copy the files needed to perform the test (`install_Debian_to_ZFS_root.sh` and `env.sh` or whatever the settings file is named.)
@@ -30,6 +30,8 @@ systemctl start openssh-server
 0) Run the test using the command `./install_Debian_to_ZFS_root.sh <settings file>`.
 0) Monitor the process and respond to any requests for further information.
 0) When the installation has completed successfully, there will be no indication of errors in the terminal. At that point reboot and confirm that the system comes up. I check that both pools exist and are imported and that `/boot/efi` has contents. I'm not aware that any further testing is needed.
+
+The default credentials for the live CD environment are `user`/`live`.
 
 There are times when the reboot goes to an EFI menu rather than the GRUB menu. In that case I find it is necessary to type `FS0:\EFI\debian\grubx64.efi` which then loads the GRUB menu. (The EFI shell supports TAB completion so it is only necessary to type `FS0:\<tab>\<tab>\<tab><enter>`)
 
