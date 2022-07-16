@@ -1,5 +1,9 @@
 # Testing
 
+## Status
+
+As of 2022-07-16 testing using Virtualbox 6.1 is a real shitshow. Dialog boxes (to choose the live ISO) are flaky and the process running in the VM seems to be very unstable with the Gnome desktop crashing repeatedly. I was unable to perform a complete test but as far as I got, I was getting different results on each try to install `zfs-dkms`. Testing with a VM is abandoned for now.
+
 ## My Procedure
 
 Initial testing was performed on real hardware. As more options were added the need for additional testing became apparent and further testing has been performed on a VM. To facilitate this testing, I have expanded the `env.sh` script in some cases to prepare partitions and filesystems to more fully automate the test.
