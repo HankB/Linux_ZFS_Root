@@ -6,6 +6,16 @@ Script to facilitate installing Debian Bullseye on a ZFS root.
 
 As of 2022-07-15 I have the need to install on a new drive in my laptop. Instructions for Bullseye have been out for a while so the script has been revised (first cut) to match changes in the instructions. At present backports are not employed but I may consider adding that.
 
+### 2022-07-16 update
+
+Testing on Virtualbox resulted in frequent (guest) desktop crashes) and Virtualbox in teneral seemed not to work well. I proceeded to test a single case using
+
+* preconfigured partitions
+* ZFS encryption
+* Dell xps 13 9370 target
+
+The test seemed to go well. Next step is to enable `bullseye-backports` as described in <https://openzfs.github.io/openzfs-docs/Getting%20Started/Debian/index.html#installation> and test with that because that is what I really want to for my particular target. At this date (2022-07-16) 2.1.5 is available in backports and builds with the 5.10 kernel.
+
 As some users may wish to install Buster, the code as it stands has been branched as `buster` and will likely only see bugfixes if needed.
 
 Complete:
