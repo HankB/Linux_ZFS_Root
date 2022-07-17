@@ -45,6 +45,22 @@ fi
 #TODO - still needed?
 echo deb http://deb.debian.org/debian bullseye main contrib >> /etc/apt/sources.list
 
+# ad-hoc - enable backports per 
+# https://openzfs.github.io/openzfs-docs/Getting%20Started/Debian/index.html#installation
+
+if [ "$USE_BACKPORTS" == "yes" ];then
+cat <<EOF >/etc/apt/sources.list.d/bullseye-backports.list
+deb http://deb.debian.org/debian bullseye-backports main contrib
+deb-src http://deb.debian.org/debian bullseye-backports main contrib
+EOF
+
+cat <<EOF >/etc/apt/preferences.d/90_zfs
+Package: src:zfs-linux
+Pin: release n=bullseye-backports
+Pin-Priority: 990
+EOF
+fi
+
 apt update
 
 # 3. install/setup OpenSSH if desired 
@@ -53,7 +69,6 @@ apt update
 # Step 1 section 4. disable automounting
 
 gsettings set org.gnome.desktop.media-handling automount false
-
 
 # Step 1 section 6 Install ZFS in the Live CD environment
 #apt install --yes debootstrap gdisk dkms dpkg-dev linux-headers-"$(uname -r)"
@@ -320,6 +335,22 @@ set -euo pipefail
 # set -u            # treat unset variables as errors
 # set -o pipefail   # check exit status of all commands in pipeline
 # set -x            # expand commands - for debugging
+
+# ad-hoc - enable backports per 
+# https://openzfs.github.io/openzfs-docs/Getting%20Started/Debian/index.html#installation
+
+if [ "\$USE_BACKPORTS" == "yes" ];then
+cat <<EOF >/etc/apt/sources.list.d/bullseye-backports.list
+deb http://deb.debian.org/debian bullseye-backports main contrib
+deb-src http://deb.debian.org/debian bullseye-backports main contrib
+EOF
+
+cat <<EOF >/etc/apt/preferences.d/90_zfs
+Package: src:zfs-linux
+Pin: release n=bullseye-backports
+Pin-Priority: 990
+EOF
+fi
 
 # Step 4 section 5 Configure a basic system environment
 ln -s /proc/self/mounts /etc/mtab

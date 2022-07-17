@@ -16,6 +16,8 @@ Testing on Virtualbox resulted in frequent (guest) desktop crashes) and Virtualb
 
 The test seemed to go well. Next step is to enable `bullseye-backports` as described in <https://openzfs.github.io/openzfs-docs/Getting%20Started/Debian/index.html#installation> and test with that because that is what I really want to for my particular target. At this date (2022-07-16) 2.1.5 is available in backports and builds with the 5.10 kernel.
 
+Later update: Incorporated backports for ZFS controlled by the variable "USE_BACKPORTS" and tested on real hardware, dual boot with Debian (not on ZFS.) As of 2022-07-12 backports provices ZFS 2.1.5.
+
 As some users may wish to install Buster, the code as it stands has been branched as `buster` and will likely only see bugfixes if needed.
 
 Complete:
